@@ -5,5 +5,6 @@
 https://bigmodel.cn/
 */
 module.exports = {
-    API_KEY: '设置API_KEY',
+    /* 这个KEY只能做临时测试用，随时失效 */
+    API_KEY: 'c6cc39bb4b89ac96cc05604ba98eb219.wq9iMHWYCPLpmDC7',
 };

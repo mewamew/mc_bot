@@ -2,7 +2,7 @@ const axios = require('axios');
 const { API_KEY } = require('./key');
 
 const API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
-const SYSTEM_PROMPT = 
+
 
 async function callGLM4API(messages, temperature = 0.7) {
   try {
