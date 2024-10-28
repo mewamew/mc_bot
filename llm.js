@@ -5,6 +5,7 @@ const API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
 
 
 async function callGLM4API(messages, temperature = 0.7) {
+  console.log("API_KEY: ", API_KEY);
   try {
     const response = await axios.post(API_URL, {
       model: "glm-4-flash",
