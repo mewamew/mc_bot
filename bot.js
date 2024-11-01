@@ -1,10 +1,8 @@
 const mineflayer = require('mineflayer')
 const { pathfinder } = require('mineflayer-pathfinder')
 const { mineflayer: mineflayerViewer } = require('prismarine-viewer')
+const { LongTermTask } = require('./longterm_task')
 const pvp = require('mineflayer-pvp').plugin
-const llm = require('./llm')
-const { KillTask, ComeTask, CollectTask } = require('./task')
-
 const bot = mineflayer.createBot({
   host: 'localhost', // minecraft 服务器的 IP 地址
   username: 'huahua', // minecraft 用户名
@@ -13,11 +11,10 @@ const bot = mineflayer.createBot({
 
 bot.loadPlugin(pathfinder)
 bot.loadPlugin(pvp)
+bot.loadPlugin(require('mineflayer-collectblock').plugin)
 bot.once('spawn', () => {
   mineflayerViewer(bot, { port: 3007, firstPerson: false }) // port 是本地网页运行的端口 ，如果 firstPerson: false，那么将会显示鸟瞰图。
 })
-
-bot.loadPlugin(require('mineflayer-collectblock').plugin)
 
 let task = null
 bot.on('chat', async (username, message) => {
@@ -26,20 +23,8 @@ bot.on('chat', async (username, message) => {
   }
 
   try {
-    const cmd = await llm.parse(message)
     let new_task = null;
-    switch (cmd.type) {
-      case 'come':
-        new_task = new ComeTask(bot)
-        break
-      case 'kill':
-        new_task = new KillTask(bot)
-        break
-      case 'collect':
-        new_task = new CollectTask(bot)
-        break
-    }
-    
+    new_task = new LongTermTask(bot, message);
     if (new_task){
         // 取消之前的任务
         if (task){
@@ -53,7 +38,6 @@ bot.on('chat', async (username, message) => {
         await task.run();
         task = null;
     }
-    bot.chat(`${cmd.response}`)
 
   } catch (error) {
     console.error('Error parsing command:', error)
