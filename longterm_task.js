@@ -1,13 +1,11 @@
 const { Task } = require('./task')
 const llm = require('./llm')
 const fs = require('fs')
-const { pathfinder } = require('mineflayer-pathfinder')
-const { GoalNear, GoalFollow, GoalXZ, GoalGetToBlock, GoalLookAtBlock } = require('mineflayer-pathfinder').goals;
-const vm = require('vm');
-const Vec3 = require('vec3').Vec3;
+const CodeExecutor = require('./code_executor');
 
 let chat_history = [];
 let last_code = '';
+
 class LongTermTask extends Task {
     constructor(bot, message) {
         super(
@@ -15,6 +13,8 @@ class LongTermTask extends Task {
             () => this.cancelLongTermTask()
         );
         this.bot = bot;
+        this.codeExecutor = new CodeExecutor(bot);
+        
     }
 
     getInventoryCounts() {
@@ -108,53 +108,30 @@ class LongTermTask extends Task {
     }
 
     async runLongTermTask(message) {
-        
-        let code = await this.generateCode(message);
-        
-        // 提取主函数名
-        const functionName = this.extractMainFunctionName(code);
-        if (!functionName) {
-            console.error('无法找到主函数名');
-            return;
-        }
-
-        last_code = code;
-
-        // 构造可执行的代码，注入必要的依赖
-        const executableCode = `
-               
-                ${code}
-                ${functionName}(this.bot);
-        `;
-
-        
         try {
-            // 创建上下文对象
-            const contextObject = {
-                require,
-                console,
-                this: this,
-                pathfinder,
-                GoalNear: GoalNear, 
-                GoalFollow: GoalFollow,  
-                GoalXZ: GoalXZ, 
-                GoalGetToBlock: GoalGetToBlock, 
-                GoalLookAtBlock: GoalLookAtBlock,
-                bot: this.bot
-            };
+            let code = await this.generateCode(message);
             
-            // 创建 vm 上下文
-            const context = vm.createContext(contextObject);
-            
-            // 在上下文中运行代码
-            vm.runInContext(executableCode, context);
+            // 提取主函数名
+            const functionName = this.extractMainFunctionName(code);
+            if (!functionName) {
+                console.error('无法找到主函数名');
+                return;
+            }
+
+            last_code = code;
+
+            // 使用 CodeExecutor 执行代码
+            await this.codeExecutor.execute(code, functionName);
         } catch (error) {
-            console.error('执行代码时出错:', error);
+            console.error('任务执行失败:', error);
+            this.bot.chat('任务执行失败: ' + error.message);
         }
     }
 
     async cancelLongTermTask() {
-
+        if (this.codeExecutor) {
+            this.codeExecutor.cleanup();
+        }
     }
 }
 

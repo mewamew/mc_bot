@@ -79,33 +79,15 @@ if (player) {
 
 上次你生成的代码:
 ```js 
-// 主函数
-async function moveToPlayer(bot) {
-  // 获取最近的玩家实体
-  const player = bot.nearestEntity(entity => entity.type === 'player');
-  if (!player) {
-    bot.chat('附近没有找到玩家！');
-    return;
-  }
-
-  // 获取玩家位置
-  const playerPos = player.position;
-  bot.chat(`正在前往玩家位置: x=${playerPos.x}, y=${playerPos.y}, z=${playerPos.z}`);
-
-  // 移动到玩家位置附近
-  await bot.pathfinder.goto(new GoalNear(playerPos.x, playerPos.y, playerPos.z, 3));
-  bot.chat('已到达玩家位置附近！');
-}
+暂时没有上次代码
 ```
 
 你和玩家的对话记录:
-玩家说: 过来我这里
-bot说: 玩家要求机器人移动到玩家所在的位置。为了实现这个目标，我们需要获取玩家的位置，并使用路径规划功能使机器人移动到该位置。由于之前的对话记录中没有提到任何错误或未完成的任务，我们可以假设这是一个新的任务。
-玩家说: 到达我附近3个格子就好了，不用贴着我
+玩家说: come to fine me
 
 
 以下是你目前的inventory:
-slime_ball: 8
+
 
 你需要返回以下信息:
 解释 (如果适用): 你的计划中是否缺少任何步骤? 为什么代码没有完成任务? 聊天记录和执行错误意味着什么?
