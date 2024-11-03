@@ -237,3 +237,650 @@ async function yourMainFunctionName(bot) {
 ```
 
 
+[2024-11-02T16:22:27.250Z] [INFO] 你是一个Mineflayer javascript代码生成器, 你会根据玩家的需求生成代码
+
+下面一些调用Mineflayer API的示例代码供你参考:
+```js
+/**
+ * Pathfinder API 文档
+ * 
+ * bot.pathfinder.goto(goal)
+ * 使机器人移动到指定目标位置。注意:此函数可能会改变主手装备。
+ * 
+ * 可用的目标类型:
+ * 
+ * 1. GoalNear(x, y, z, range)
+ *    让机器人移动到指定方块的指定范围内
+ *    参数:
+ *    - x, y, z: number 类型,目标坐标
+ *    - range: number 类型,可接受的距离范围
+ * 
+ * 2. GoalXZ(x, z) 
+ *    适用于不需要指定Y坐标的远程目标
+ *    参数:
+ *    - x, z: number 类型,目标平面坐标
+ * 
+ * 3. GoalGetToBlock(x, y, z)
+ *    移动到指定方块的相邻位置,不会进入方块内
+ *    适用于钓鱼、农作、装水、使用床等场景
+ *    参数:
+ *    - x, y, z: number 类型,目标方块坐标
+ * 
+ * 4. GoalFollow(entity, range)
+ *    跟随指定实体并保持在指定范围内
+ *    参数:
+ *    - entity: Entity 类型,要跟随的实体
+ *    - range: number 类型,跟随距离
+ * 
+ * 5. GoalPlaceBlock(position, bot.world, {})
+ *    移动到可以放置方块的位置
+ *    参数:
+ *    - position: Vec3 类型,目标位置
+ * 
+ * 6. GoalLookAtBlock(position, bot.world, {})
+ *    移动到可以看到目标方块表面的位置
+ *    参数:
+ *    - position: Vec3 类型,目标方块位置
+ */
+
+
+// 移动到指定位置附近
+await bot.pathfinder.goto(new GoalNear(100, 64, 100, 5));
+
+//  移动到指定的XZ坐标
+await bot.pathfinder.goto(new GoalXZ(200, 200));
+
+// 移动到指定的方块旁边
+await bot.pathfinder.goto(new GoalGetToBlock(150, 64, 150));
+
+// 跟随指定的实体
+const entity = bot.nearestEntity();
+if (entity) {
+  await bot.pathfinder.goto(new GoalFollow(entity, 2));
+}
+
+// 移动到指定位置以放置方块
+const position = new Vec3(120, 64, 120);
+await bot.pathfinder.goto(new GoalPlaceBlock(position, bot.world, {}));
+
+//  移动到指定位置以观察方块
+const lookAtPosition = new Vec3(130, 64, 130);
+await bot.pathfinder.goto(new GoalLookAtBlock(lookAtPosition, bot.world, {}));
+
+// 获取玩家位置
+const player = bot.nearestEntity(entity => entity.type === 'player');
+if (player) {
+  const playerPos = player.position;
+  console.log(`玩家位置: x=${playerPos.x}, y=${playerPos.y}, z=${playerPos.z}`);
+}
+
+```
+
+上次你生成的代码:
+```js 
+暂时没有上次代码
+```
+
+你和玩家的对话记录:
+玩家说: mine 3 iron_ore
+
+
+以下是你目前的inventory:
+当前为空
+
+你需要返回以下信息:
+解释 (如果适用): 你的计划中是否缺少任何步骤? 为什么代码没有完成任务? 聊天记录和执行错误意味着什么?
+计划: 如何一步步完成任务。
+代码:
+    1. 编写一个只接受bot作为参数的异步函数。
+    2. 函数外定义的任何内容都会被忽略,在函数内定义所有变量。
+    3. 使用 `bot.chat` 来显示中间进度。
+    4. 不要写无限循环或递归函数。
+    5. 不要使用 `bot.on` 或 `bot.once` 来注册事件监听器。你绝对不需要它们。
+    6. 以有意义的方式命名你的函数(可以从名称推断任务)。
+
+你应该只按照下面描述的格式回应:
+解释: ...
+计划:
+1. ...
+2. ...
+3. ...
+...
+代码:
+```js
+// 帮助 functions (尽量避免)
+...
+// 主函数
+async function yourMainFunctionName(bot) {
+  // ...
+}
+```
+
+
+[2024-11-02T16:23:45.248Z] [INFO] 你是一个Mineflayer javascript代码生成器, 你会根据玩家的需求生成代码
+
+下面一些调用Mineflayer API的示例代码供你参考:
+```js
+/**
+ * Pathfinder API 文档
+ * 
+ * bot.pathfinder.goto(goal)
+ * 使机器人移动到指定目标位置。注意:此函数可能会改变主手装备。
+ * 
+ * 可用的目标类型:
+ * 
+ * 1. GoalNear(x, y, z, range)
+ *    让机器人移动到指定方块的指定范围内
+ *    参数:
+ *    - x, y, z: number 类型,目标坐标
+ *    - range: number 类型,可接受的距离范围
+ * 
+ * 2. GoalXZ(x, z) 
+ *    适用于不需要指定Y坐标的远程目标
+ *    参数:
+ *    - x, z: number 类型,目标平面坐标
+ * 
+ * 3. GoalGetToBlock(x, y, z)
+ *    移动到指定方块的相邻位置,不会进入方块内
+ *    适用于钓鱼、农作、装水、使用床等场景
+ *    参数:
+ *    - x, y, z: number 类型,目标方块坐标
+ * 
+ * 4. GoalFollow(entity, range)
+ *    跟随指定实体并保持在指定范围内
+ *    参数:
+ *    - entity: Entity 类型,要跟随的实体
+ *    - range: number 类型,跟随距离
+ * 
+ * 5. GoalPlaceBlock(position, bot.world, {})
+ *    移动到可以放置方块的位置
+ *    参数:
+ *    - position: Vec3 类型,目标位置
+ * 
+ * 6. GoalLookAtBlock(position, bot.world, {})
+ *    移动到可以看到目标方块表面的位置
+ *    参数:
+ *    - position: Vec3 类型,目标方块位置
+ */
+
+
+// 移动到指定位置附近
+await bot.pathfinder.goto(new GoalNear(100, 64, 100, 5));
+
+//  移动到指定的XZ坐标
+await bot.pathfinder.goto(new GoalXZ(200, 200));
+
+// 移动到指定的方块旁边
+await bot.pathfinder.goto(new GoalGetToBlock(150, 64, 150));
+
+// 跟随指定的实体
+const entity = bot.nearestEntity();
+if (entity) {
+  await bot.pathfinder.goto(new GoalFollow(entity, 2));
+}
+
+// 移动到指定位置以放置方块
+const position = new Vec3(120, 64, 120);
+await bot.pathfinder.goto(new GoalPlaceBlock(position, bot.world, {}));
+
+//  移动到指定位置以观察方块
+const lookAtPosition = new Vec3(130, 64, 130);
+await bot.pathfinder.goto(new GoalLookAtBlock(lookAtPosition, bot.world, {}));
+
+// 获取玩家位置
+const player = bot.nearestEntity(entity => entity.type === 'player');
+if (player) {
+  const playerPos = player.position;
+  console.log(`玩家位置: x=${playerPos.x}, y=${playerPos.y}, z=${playerPos.z}`);
+}
+
+```
+
+上次你生成的代码:
+```js 
+// 帮助函数: 寻找最近的铁矿石
+function findNearestIronOre(bot) {
+  const ironOre = bot.findBlock({
+    matching: block => block.name === 'iron_ore',
+    maxDistance: 64
+  });
+  return ironOre;
+}
+
+// 主函数
+async function mineThreeIronOres(bot) {
+  let ironOreCount = 0;
+
+  while (ironOreCount < 3) {
+    const ironOre = findNearestIronOre(bot);
+    if (!ironOre) {
+      bot.chat('附近没有找到铁矿石');
+      break;
+    }
+
+    await bot.pathfinder.goto(new GoalGetToBlock(ironOre.position.x, ironOre.position.y, ironOre.position.z));
+    await bot.dig(ironOre);
+    ironOreCount++;
+    bot.chat(`已挖掘 ${ironOreCount} 个铁矿石`);
+  }
+
+  if (ironOreCount === 3) {
+    bot.chat('已成功挖掘3个铁矿石');
+  }
+}
+```
+
+你和玩家的对话记录:
+玩家说: mine 3 iron_ore
+bot说: 玩家要求挖掘3个铁矿石，但当前没有提供具体的铁矿石位置信息。我们需要先找到铁矿石，然后进行挖掘。由于inventory当前为空，我们假设bot已经装备了合适的工具（如铁镐）来进行挖掘。
+玩家说: 请你不要假设我有任何工具
+
+
+以下是你目前的inventory:
+当前为空
+
+你需要返回以下信息:
+解释 (如果适用): 你的计划中是否缺少任何步骤? 为什么代码没有完成任务? 聊天记录和执行错误意味着什么?
+计划: 如何一步步完成任务。
+代码:
+    1. 编写一个只接受bot作为参数的异步函数。
+    2. 函数外定义的任何内容都会被忽略,在函数内定义所有变量。
+    3. 使用 `bot.chat` 来显示中间进度。
+    4. 不要写无限循环或递归函数。
+    5. 不要使用 `bot.on` 或 `bot.once` 来注册事件监听器。你绝对不需要它们。
+    6. 以有意义的方式命名你的函数(可以从名称推断任务)。
+
+你应该只按照下面描述的格式回应:
+解释: ...
+计划:
+1. ...
+2. ...
+3. ...
+...
+代码:
+```js
+// 帮助 functions (尽量避免)
+...
+// 主函数
+async function yourMainFunctionName(bot) {
+  // ...
+}
+```
+
+
+[2024-11-02T16:24:03.329Z] [ERROR] 任务执行失败:
+[2024-11-02T16:25:58.202Z] [INFO] 你是一个Mineflayer javascript代码生成器, 你会根据玩家的需求生成代码
+
+下面一些调用Mineflayer API的示例代码供你参考:
+```js
+/**
+ * Pathfinder API 文档
+ * 
+ * bot.pathfinder.goto(goal)
+ * 使机器人移动到指定目标位置。注意:此函数可能会改变主手装备。
+ * 
+ * 可用的目标类型:
+ * 
+ * 1. GoalNear(x, y, z, range)
+ *    让机器人移动到指定方块的指定范围内
+ *    参数:
+ *    - x, y, z: number 类型,目标坐标
+ *    - range: number 类型,可接受的距离范围
+ * 
+ * 2. GoalXZ(x, z) 
+ *    适用于不需要指定Y坐标的远程目标
+ *    参数:
+ *    - x, z: number 类型,目标平面坐标
+ * 
+ * 3. GoalGetToBlock(x, y, z)
+ *    移动到指定方块的相邻位置,不会进入方块内
+ *    适用于钓鱼、农作、装水、使用床等场景
+ *    参数:
+ *    - x, y, z: number 类型,目标方块坐标
+ * 
+ * 4. GoalFollow(entity, range)
+ *    跟随指定实体并保持在指定范围内
+ *    参数:
+ *    - entity: Entity 类型,要跟随的实体
+ *    - range: number 类型,跟随距离
+ * 
+ * 5. GoalPlaceBlock(position, bot.world, {})
+ *    移动到可以放置方块的位置
+ *    参数:
+ *    - position: Vec3 类型,目标位置
+ * 
+ * 6. GoalLookAtBlock(position, bot.world, {})
+ *    移动到可以看到目标方块表面的位置
+ *    参数:
+ *    - position: Vec3 类型,目标方块位置
+ */
+
+
+// 移动到指定位置附近
+await bot.pathfinder.goto(new GoalNear(100, 64, 100, 5));
+
+//  移动到指定的XZ坐标
+await bot.pathfinder.goto(new GoalXZ(200, 200));
+
+// 移动到指定的方块旁边
+await bot.pathfinder.goto(new GoalGetToBlock(150, 64, 150));
+
+// 跟随指定的实体
+const entity = bot.nearestEntity();
+if (entity) {
+  await bot.pathfinder.goto(new GoalFollow(entity, 2));
+}
+
+// 移动到指定位置以放置方块
+const position = new Vec3(120, 64, 120);
+await bot.pathfinder.goto(new GoalPlaceBlock(position, bot.world, {}));
+
+//  移动到指定位置以观察方块
+const lookAtPosition = new Vec3(130, 64, 130);
+await bot.pathfinder.goto(new GoalLookAtBlock(lookAtPosition, bot.world, {}));
+
+// 获取玩家位置
+const player = bot.nearestEntity(entity => entity.type === 'player');
+if (player) {
+  const playerPos = player.position;
+  console.log(`玩家位置: x=${playerPos.x}, y=${playerPos.y}, z=${playerPos.z}`);
+}
+
+```
+
+上次你生成的代码:
+```js 
+// 帮助函数: 寻找最近的铁矿石
+function findNearestIronOre(bot) {
+  const ironOre = bot.findBlock({
+    matching: block => block.name === 'iron_ore',
+    maxDistance: 64
+  });
+  return ironOre;
+}
+
+// 主函数
+async function mineThreeIronOres(bot) {
+  let ironOreCount = 0;
+
+  while (ironOreCount < 3) {
+    const ironOre = findNearestIronOre(bot);
+    if (!ironOre) {
+      bot.chat('附近没有找到铁矿石');
+      break;
+    }
+
+    await bot.pathfinder.goto(new GoalGetToBlock(ironOre.position.x, ironOre.position.y, ironOre.position.z));
+    await bot.dig(ironOre);
+    ironOreCount++;
+    bot.chat(`已挖掘 ${ironOreCount} 个铁矿石`);
+  }
+
+  if (ironOreCount === 3) {
+    bot.chat('已成功挖掘3个铁矿石');
+  }
+}
+```
+
+你和玩家的对话记录:
+玩家说: mine 3 iron_ore
+bot说: 玩家要求挖掘3个铁矿石，但当前没有提供具体的铁矿石位置信息。我们需要先找到铁矿石，然后进行挖掘。由于inventory当前为空，我们假设bot已经装备了合适的工具（如铁镐）来进行挖掘。
+玩家说: 请你不要假设我有任何工具
+bot说: 在之前的代码中，我们假设bot已经装备了合适的工具来进行挖掘，但实际上玩家的inventory为空，这意味着bot没有装备任何工具，因此无法进行挖掘。我们需要在挖掘之前检查并确保bot有合适的工具，如果没有，则需要先获取工具。
+玩家说: 你生成的代码有BUG:TypeError: bot.inventory.some is not a function
+
+
+以下是你目前的inventory:
+当前为空
+
+你需要返回以下信息:
+解释 (如果适用): 你的计划中是否缺少任何步骤? 为什么代码没有完成任务? 聊天记录和执行错误意味着什么?
+计划: 如何一步步完成任务。
+代码:
+    1. 编写一个只接受bot作为参数的异步函数。
+    2. 函数外定义的任何内容都会被忽略,在函数内定义所有变量。
+    3. 使用 `bot.chat` 来显示中间进度。
+    4. 不要写无限循环或递归函数。
+    5. 不要使用 `bot.on` 或 `bot.once` 来注册事件监听器。你绝对不需要它们。
+    6. 以有意义的方式命名你的函数(可以从名称推断任务)。
+
+你应该只按照下面描述的格式回应:
+解释: ...
+计划:
+1. ...
+2. ...
+3. ...
+...
+代码:
+```js
+// 帮助 functions (尽量避免)
+...
+// 主函数
+async function yourMainFunctionName(bot) {
+  // ...
+}
+```
+
+
+[2024-11-03T02:02:24.005Z] [INFO] [object Object]
+[2024-11-03T02:04:42.291Z] [INFO] 你是一个经验丰富的Minecraft玩家, 你擅长将一个任务分解成几个子任务
+
+当前的inventory:
+当前为空
+
+当前的任务:
+制作一把木镐
+
+你需要返回以下信息:
+解释: 你将任务分解成几个子任务的思路
+子任务列表: 你将任务分解成几个子任务的列表。每个子任务必须包含下面几个类型的任务中的一个
+mine 方块类型 数量
+craft 物品类型 数量
+smelt 物品类型 数量
+kill 生物类型 数量
+cook 食物类型 数量
+equip 物品类型
+注意所有类型都用minecraft的标准英文命名
+
+请严格仅用JSON格式返回，确保返回的JSON可以被正确解析，无需返回其他任何信息:
+{
+    "reason": "...",  
+    "sub_tasks": [
+        {
+            "type": "mine",
+            "block_type": "...",
+            "count": ...
+        },
+        {
+            "type": "craft",
+            "item_type": "...",
+            "count": ...
+        },
+        {
+            "type": "kill",
+            "mob_type": "...",
+            "count": ...
+        },
+        {
+            "type": "cook",
+            "food_type": "...",
+            "count": ...
+        },
+        {
+            "type": "equip",
+            "item_type": ...
+        }
+    ]
+}
+
+[2024-11-03T02:04:50.054Z] [INFO] [object Object]
+[2024-11-03T03:03:43.469Z] [INFO] 你是一个经验丰富的Minecraft玩家, 你擅长将一个任务分解成几个子任务
+
+当前的inventory:
+当前为空
+
+当前的任务:
+制作一把木镐
+
+你需要返回以下信息:
+解释: 你将任务分解成几个子任务的思路
+子任务列表: 你将任务分解成几个子任务的列表。每个子任务必须包含下面几个类型的任务中的一个
+- mine 方块类型 数量
+- craft 物品类型 数量
+- smelt 物品类型 数量
+- kill 生物类型 数量
+- cook 食物类型 数量
+- equip 物品类型
+
+注意:
+- 所有类型都用minecraft的标准英文命名
+- 如果没有工作台，需要先制作工作台
+- 严格根据你的inventory来分解任务, 不要假设你拥有任何东西
+
+
+请严格仅用JSON格式返回，确保返回的JSON可以被正确解析，无需返回其他任何信息:
+{
+    "reason": "...",  
+    "sub_tasks": [
+        {
+            "type": "mine",
+            "block_type": "...",
+            "count": ...
+        },
+        {
+            "type": "craft",
+            "item_type": "...",
+            "count": ...
+        },
+        {
+            "type": "kill",
+            "mob_type": "...",
+            "count": ...
+        },
+        {
+            "type": "cook",
+            "food_type": "...",
+            "count": ...
+        },
+        {
+            "type": "equip",
+            "item_type": ...
+        }
+    ]
+}
+
+[2024-11-03T03:03:50.116Z] [INFO] [object Object]
+[2024-11-03T03:25:19.427Z] [INFO] 你是一个经验丰富的Minecraft玩家, 你擅长将一个任务分解成几个子任务
+
+
+
+当前的inventory:
+当前为空
+
+当前的任务:
+制作一把木镐
+
+你需要返回以下信息:
+解释: 你将任务分解成几个子任务的思路
+子任务列表: 你将任务分解成几个子任务的列表。每个子任务必须包含下面几个类型的任务中的一个
+- mine 方块类型 数量
+- craft 物品类型 数量
+- smelt 物品类型 数量
+- kill 生物类型 数量
+- cook 食物类型 数量
+- equip 物品类型
+
+注意:
+- 所有类型都用minecraft的标准英文命名
+- 如果没有工作台，需要先制作工作台
+- 严格根据你的inventory来分解任务, 不要假设你拥有任何东西
+
+
+请严格仅用JSON格式返回，确保返回的JSON可以被正确解析，无需返回其他任何信息:
+{
+    "reason": "...",  
+    "sub_tasks": [
+        {
+            "type": "mine",
+            "block_type": "...",
+            "count": ...
+        },
+        {
+            "type": "craft",
+            "item_type": "...",
+            "count": ...
+        },
+        {
+            "type": "kill",
+            "mob_type": "...",
+            "count": ...
+        },
+        {
+            "type": "cook",
+            "food_type": "...",
+            "count": ...
+        },
+        {
+            "type": "equip",
+            "item_type": ...
+        }
+    ]
+}
+
+[2024-11-03T03:25:27.166Z] [INFO] [object Object]
+[2024-11-03T03:41:25.634Z] [INFO] 你是一个经验丰富的Minecraft玩家, 你擅长将一个任务分解成几个子任务
+
+当前的inventory:
+当前为空
+
+当前的任务:
+制作一把木镐
+
+你需要返回以下信息:
+解释: 你将任务分解成几个子任务的思路
+子任务列表: 你将任务分解成几个子任务的列表。每个子任务必须包含下面几个类型的任务中的一个
+- mine 方块类型 数量
+- craft 物品类型 数量
+- smelt 物品类型 数量
+- kill 生物类型 数量
+- cook 食物类型 数量
+- equip 物品类型
+
+注意:
+- 所有类型都用minecraft的标准英文命名
+- 如果没有工作台，需要先制作工作台
+- 严格根据你的inventory来分解任务, 不要假设你拥有任何东西
+
+
+请严格仅用JSON格式返回，确保返回的JSON可以被正确解析，无需返回其他任何信息:
+{
+    "reason": "...",  
+    "sub_tasks": [
+        {
+            "type": "mine",
+            "block_type": "...",
+            "count": ...
+        },
+        {
+            "type": "craft",
+            "item_type": "...",
+            "count": ...
+        },
+        {
+            "type": "kill",
+            "mob_type": "...",
+            "count": ...
+        },
+        {
+            "type": "cook",
+            "food_type": "...",
+            "count": ...
+        },
+        {
+            "type": "equip",
+            "item_type": ...
+        }
+    ]
+}
+
+[2024-11-03T03:41:33.990Z] [INFO] [object Object]

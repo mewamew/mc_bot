@@ -36,19 +36,18 @@ class McBot {
     }
 
     async handleMessage(message) {
-        await this.taskExecutor.run(message, this.getInventories());
-
-        /*
-        const json_result = await this.taskPlanner.planTasks(message, this.getInventories());
-        if (json_result) {
-            logger.info(json_result);
-            this.bot.chat(json_result.reason);
-            for (const task of json_result.sub_tasks) {
-                this.bot.chat(task.type + ' ' + task.block_type + ' ' + task.count);
-                logger.info(task.type + ' ' + task.block_type + ' ' + task.count);
+        
+        if (message.startsWith('c')) {
+            //测试用，c开头的直接执行任务
+            await this.taskExecutor.run(message, this.getInventories());
+        } else {
+            const json_result = await this.taskPlanner.planTasks(message, this.getInventories());
+            if (json_result) {
+                logger.info(json_result);
+                this.bot.chat(json_result.reason);
+                this.taskPlanner.showMyTasks(json_result.sub_tasks, this.bot);
             }
         }
-        */
     }
 }
 
