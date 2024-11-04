@@ -58,7 +58,7 @@ class TaskExecutor {
             { role: "user", content: prompt }
         ];
 
-        const response = await llm.call(messages);
+        const response = await llm.call(messages, 0.0);
         
         // 提取并保存解释文本
         const explanation = this.extractExplanationFromResponse(response);

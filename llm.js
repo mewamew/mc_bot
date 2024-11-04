@@ -1,12 +1,11 @@
 const axios = require('axios');
-const { API_KEY } = require('./key');
+const { API_KEY, API_URL, MODEL } = require('./config');
 
 class LLM {
   constructor() {
-    this.API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+    this.API_URL = API_URL;
     this.API_KEY = API_KEY;
-    //this.MODEL = "glm-4-flash";
-    this.MODEL = "glm-4-plus";
+    this.MODEL = MODEL;
   }
 
   async call(messages, temperature = 0.7) {
@@ -23,7 +22,7 @@ class LLM {
           'Authorization': `Bearer ${this.API_KEY}`
         }
       });
-      return response.data.choices[0].message.content.trim();
+      return response.data.choices[0].message.content.trim();z
     } catch (error) {
       console.error('调用GLM-4 API时出错:', error);
       throw error;

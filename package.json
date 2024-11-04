@@ -2,9 +2,9 @@
   "name": "minecraft-ai-companion",
   "version": "1.0.0",
   "description": "An AI companion bot for Minecraft",
-  "main": "bot.js",
+  "main": "main.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node main.js"
   },
   "dependencies": {
     "minecraft-data": "^3.76.0",
