@@ -37,27 +37,10 @@ class McBot {
     async handleMessage(message) {
         
         if (message.startsWith('c')) {
-            let retry = 0;
             //测试用，c开头的直接执行任务
-            await this.taskExecutor.run(message, this.getInventories());
-            while (retry < 3) {
-                // 验证任务是否完成
-                const result = await this.taskValidator.validate(message, this.getInventories(), this.taskExecutor.getLastCode());
-                if (!result) {
-                    logger.error('验证任务失败');
-                    break;
-                }
-                if (result.success) {
-                    this.bot.chat(result.reason);
-                    break;
-                } else {
-                    this.bot.chat(result.reason);
-                    await this.taskExecutor.run(result.reason, this.getInventories());
-                    retry++;
-                }
-            }
+            await this.taskExecutor.run(message.substring(1), this.getInventories());
         } else if (message.startsWith('d')) {
-            await this.taskExecutor.debugJs("codes/breakAndCollect.js");
+            await this.taskExecutor.debugJs("codes/"+message.substring(1)+".js");
         } else {
             const json_result = await this.taskPlanner.planTasks(message, this.getInventories());
             if (json_result) {
