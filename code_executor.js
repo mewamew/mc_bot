@@ -1,7 +1,7 @@
 const vm = require('vm');
 const { GoalNear, GoalFollow, GoalXZ, GoalGetToBlock, GoalLookAtBlock } = require('mineflayer-pathfinder').goals;
 const Vec3 = require('vec3').Vec3;
-
+const logger = require('./logger');
 class CodeExecutor {
     constructor(bot) {
         this.bot = bot;
@@ -75,13 +75,16 @@ class CodeExecutor {
     // 执行代码
     async execute(code, functionName) {
         const executableCode = this.prepareExecutableCode(code, functionName);
-
+        logger.info('执行代码:');
+        logger.info(executableCode);
         try {
             const context = this.prepareContext();
             const result = await vm.runInContext(executableCode, context, {
                 timeout: 30000, // 30秒超时
                 filename: 'dynamic-code.js'
             });
+            logger.info('执行结果:');
+            logger.info(result);
             return result;
         } catch (error) {
             if (error.code === 'ERR_SCRIPT_EXECUTION_TIMEOUT') {

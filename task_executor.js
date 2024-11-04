@@ -12,6 +12,28 @@ class TaskExecutor {
         this.last_error = '';
     }
 
+    getLastCode() {
+        return this.last_code;
+    }
+
+    async debugJs(jsFile) {
+        try {
+            const code = fs.readFileSync(jsFile, 'utf8');
+             // 提取主函数名
+             const functionName = this.extractMainFunctionName(code);
+             if (!functionName) {
+                 logger.error('无法找到主函数名');
+                 return false;
+             }
+ 
+             // 执行代码
+             await this.codeExecutor.execute(code, functionName);
+             return true;
+        } catch (error) {
+            logger.error('调试JS文件失败:', error.message);
+            return false;
+        }
+    }
 
     async run(task, inventory) {
         try {
@@ -21,7 +43,7 @@ class TaskExecutor {
                 logger.error('代码生成失败');
                 return false;
             }
-            console.log(code);
+            logger.info(code);
 
             // 提取主函数名
             const functionName = this.extractMainFunctionName(code);
@@ -29,7 +51,12 @@ class TaskExecutor {
                 logger.error('无法找到主函数名');
                 return false;
             }
-            console.log(functionName);
+            logger.info(functionName);
+
+            // 保存代码到文件
+            const filePath = `codes/${functionName}.js`;
+            fs.writeFileSync(filePath, code, 'utf8');
+            logger.info(`代码已保存到: ${filePath}`);
 
             // 执行代码
             await this.codeExecutor.execute(code, functionName);
@@ -52,7 +79,7 @@ class TaskExecutor {
         prompt = prompt.replace('{{bot_inventory}}', inventory);
         prompt = prompt.replace('{{chat_history}}', this.getChatHistory());
         prompt = prompt.replace('{{last_code}}', this.last_code || '暂时没有上次代码');
-        logger.info(prompt);
+        
         const messages = [
             { role: "system", content: "你是Minecraft控制代码生成器" },
             { role: "user", content: prompt }
@@ -86,8 +113,15 @@ class TaskExecutor {
     }
 
     extractMainFunctionName(code) {
-        const match = code.match(/(?:async\s+)?function\s+(\w+)/);
-        return match ? match[1] : null;
+        // 匹配所有的函数声明
+        const matches = Array.from(code.matchAll(/(?:async\s+)?function\s+(\w+)/g));
+        
+        // 如果有匹配项，返回最后一个函数名
+        if (matches.length > 0) {
+            return matches[matches.length - 1][1];
+        }
+        
+        return null;
     }
 
     extractCodeFromResponse(response) {

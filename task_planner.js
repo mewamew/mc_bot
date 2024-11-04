@@ -5,15 +5,13 @@ const json = require('./json_extractor');
 
 class TaskPlanner {
     constructor() {
-        this.prompt = fs.readFileSync('prompts/reason.txt', 'utf8');
     }
 
     async planTasks(message, inventory) {
         try {
-            let prompt = this.prompt;
+            let prompt = fs.readFileSync('prompts/reason.txt', 'utf8');
             prompt = prompt.replace('{{inventory}}', inventory);
             prompt = prompt.replace('{{task}}', message);
-            logger.info(prompt);
             const messages = [
                 { role: "user", content: prompt}
             ];

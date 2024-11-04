@@ -15,7 +15,7 @@ class Logger {
 
     formatMessage(level, message) {
         const timestamp = new Date().toISOString();
-        return `[${timestamp}] [${level}] ${message}`;
+        return `[${timestamp}] [${level}]\n ${message}`;
     }
 
     writeToFile(formattedMessage) {
