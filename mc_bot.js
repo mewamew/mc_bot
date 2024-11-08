@@ -40,7 +40,25 @@ class McBot {
             //测试用，c开头的直接执行任务
             await this.taskExecutor.run(message.substring(1), this.getInventories());
         } else if (message.startsWith('d')) {
-            await this.taskExecutor.debugJs("codes/"+message.substring(1)+".js");
+            try {
+                const collectBlock = require('./skills/collect_block');
+                
+                // 解析参数: d collect <方块类型> [数量] [工具类型]
+                const blockType = 'oak_log';  // 默认收集橡木
+                const count = 1
+                
+                this.bot.chat(`测试收集功能: 收集 ${blockType} x${count}`);
+                const success = await collectBlock(this.bot, blockType, count);
+                
+                if (success) {
+                    this.bot.chat('收集任务完成！');
+                } else {
+                    this.bot.chat('收集任务失败！');
+                }
+            } catch (error) {
+                this.bot.chat(`执行出错: ${error.message}`);
+                logger.error(error);
+            }
         } else {
             const json_result = await this.taskPlanner.planTasks(message, this.getInventories());
             if (json_result) {
