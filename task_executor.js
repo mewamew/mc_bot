@@ -16,29 +16,15 @@ class TaskExecutor {
         return this.last_code;
     }
 
-    async debugJs(jsFile) {
-        try {
-            const code = fs.readFileSync(jsFile, 'utf8');
-             // 提取主函数名
-             const functionName = this.extractMainFunctionName(code);
-             if (!functionName) {
-                 logger.error('无法找到主函数名');
-                 return false;
-             }
- 
-             // 执行代码
-             await this.codeExecutor.execute(code, functionName);
-             return true;
-        } catch (error) {
-            logger.error('调试JS文件失败:', error.message);
-            return false;
-        }
+    getLastError() {
+        return this.last_error;
     }
 
-    async run(task, inventory) {
+
+    async run(task, environment, inventory) {
         try {
             // 生成代码
-            const code = await this.generateCode(task, inventory);
+            const code = await this.generateCode(task, environment, inventory);
             if (!code) {
                 logger.error('代码生成失败');
                 return false;
@@ -69,7 +55,7 @@ class TaskExecutor {
         }
     }
 
-    async generateCode(task, inventory) {
+    async generateCode(task, environment, inventory) {
         this.chat_history.push(task);
         let prompt = fs.readFileSync('prompts/action.txt', 'utf8');
         const code = fs.readFileSync('sample_codes/base.js', 'utf8');
@@ -77,6 +63,7 @@ class TaskExecutor {
         // 替换提示词中的占位符
         prompt = prompt.replace('{{code}}', code);
         prompt = prompt.replace('{{bot_inventory}}', inventory);
+        prompt = prompt.replace('{{environment}}', environment);
         prompt = prompt.replace('{{chat_history}}', this.getChatHistory());
         prompt = prompt.replace('{{last_code}}', this.last_code || '暂时没有上次代码');
         

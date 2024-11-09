@@ -4,15 +4,17 @@ const json = require('./json_extractor');
 const fs = require('fs');
 
 
-class TaskValidator {
+class Reflector {
     constructor() {
     }
 
-    async validate(message, inventory, last_code) {
-        let prompt = fs.readFileSync('prompts/validate.txt', 'utf8');
+    async validate(message, environment, inventory, last_code, last_error) {
+        let prompt = fs.readFileSync('prompts/reflect.txt', 'utf8');
+        prompt = prompt.replace('{{environment}}', environment);
         prompt = prompt.replace('{{inventory}}', inventory);
         prompt = prompt.replace('{{task}}', message);
         prompt = prompt.replace('{{last_code}}', last_code);
+        prompt = prompt.replace('{{last_error}}', last_error);
 
         const messages = [
             { role: "user", content: prompt}
@@ -36,5 +38,5 @@ class TaskValidator {
     }
 }
 
-module.exports = TaskValidator;
+module.exports = Reflector;
 
