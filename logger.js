@@ -1,10 +1,11 @@
 const fs = require('fs');
 const path = require('path');
+const { format } = require('date-fns');
 
 class Logger {
     constructor(options = {}) {
         this.logDir = options.logDir || 'logs';
-        this.logFile = options.logFile || 'app.log';
+        this.logFile = format(new Date(), 'yyyyMMdd') + '.txt';
         this.logPath = path.join(this.logDir, this.logFile);
         
         // 确保日志目录存在

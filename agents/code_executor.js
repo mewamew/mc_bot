@@ -1,7 +1,7 @@
 const vm = require('vm');
 const { GoalNear, GoalFollow, GoalXZ, GoalGetToBlock, GoalLookAtBlock } = require('mineflayer-pathfinder').goals;
 const Vec3 = require('vec3').Vec3;
-const logger = require('./logger');
+const logger = require('../logger');
 class CodeExecutor {
     constructor(bot) {
         this.bot = bot;

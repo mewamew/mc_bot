@@ -1,4 +1,4 @@
-const logger = require('./logger');
+const logger = require('../logger');
 const llm = require('./llm');
 const fs = require('fs');
 const json = require('./json_extractor');
@@ -9,7 +9,7 @@ class TaskPlanner {
 
     async planTasks(message, inventory) {
         try {
-            let prompt = fs.readFileSync('prompts/reason.txt', 'utf8');
+            let prompt = fs.readFileSync('../prompts/reason.txt', 'utf8');
             prompt = prompt.replace('{{inventory}}', inventory);
             prompt = prompt.replace('{{task}}', message);
             const messages = [

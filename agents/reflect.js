@@ -1,4 +1,4 @@
-const logger = require('./logger');
+const logger = require('../logger');
 const llm = require('./llm');
 const json = require('./json_extractor');
 const fs = require('fs');
