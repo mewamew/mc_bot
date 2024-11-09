@@ -35,9 +35,11 @@ class McBot {
     }
 
     async handleMessage(message) {
-        if (message.startsWith('c')) {
-            await this.taskExecutor.run(message.substring(1), this.getEnvironment(), this.getInventories());
-        } else if (message.startsWith('f')) {
+        const maxRetries = 3;   
+        let retries = 0;
+
+        await this.taskExecutor.run(message, this.getEnvironment(), this.getInventories());
+        while (retries < maxRetries) {
             const result = await this.reflector.validate(
                 message.substring(1), 
                 this.getEnvironment(), 
@@ -48,18 +50,13 @@ class McBot {
             
             this.bot.chat(result.success ? '任务完成' : '任务失败');
             this.bot.chat(result.reason);
-            if (!result.success) {
-                await this.taskExecutor.run(message.substring(1), this.getEnvironment(), this.getInventories());
-            }
 
-        } else if (message.startsWith('e')) {
-            this.bot.chat(this.getEnvironment());
-        } else {
-            const json_result = await this.taskPlanner.planTasks(message, this.getInventories());
-            if (json_result) {
-                logger.info(json_result);
-                this.bot.chat(json_result.reason);
-                this.taskPlanner.showMyTasks(json_result.sub_tasks, this.bot);
+            if (result.success) {
+                this.taskExecutor.reset();
+                break;
+            } else {
+                retries++;
+                await this.taskExecutor.run(result.reason, this.getEnvironment(), this.getInventories());
             }
         }
     }

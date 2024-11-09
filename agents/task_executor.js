@@ -20,6 +20,11 @@ class TaskExecutor {
         return this.last_error;
     }
 
+    reset() {
+        this.chat_history = [];
+        this.last_code = '';
+        this.last_error = '';
+    }
 
     async run(task, environment, inventory) {
         try {
