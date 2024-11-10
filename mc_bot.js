@@ -229,30 +229,40 @@ class McBot {
 
         if (message.startsWith("g")) {
             const skill = await this.skillManager.getSkill(message.substring(1));
+            logger.info(skill.score);
             logger.info(skill.description);
+            logger.info(skill.metadata.functionName);
+
             return;
         }
 
         const maxRetries = 3;   
         let retries = 0;
 
-        await this.taskExecutor.run(message, this.getEnvironment(), this.getInventories(), this.getBotPosition());
+        const result = await this.taskExecutor.run(message, this.getEnvironment(), this.getInventories(), this.getBotPosition());
+        if (!result) {
+            logger.error('失败了，应该是解析返回有问题!');
+            return;
+        }
         while (retries < maxRetries) {
             const result = await this.reflector.validate(
                 message.substring(1), 
                 this.getEnvironment(), 
                 this.getInventories(), 
                 this.getBotPosition(),
-                this.taskExecutor.getLastCode(),
-                this.taskExecutor.getLastReport(),
-                this.taskExecutor.getLastError()
+                this.taskExecutor.getRuntime().getLastCode(),
+                this.taskExecutor.getRuntime().getLastReport(),
+                this.taskExecutor.getRuntime().getLastError()
             );
             
             this.bot.chat(result.success ? '任务完成' : '任务失败');
             this.bot.chat(result.reason);
 
             if (result.success) {
-                this.taskExecutor.reset();
+                // 保存技能
+                await this.skillManager.saveSkill(this.taskExecutor.getRuntime().getLastFunctionDescription(), this.taskExecutor.getRuntime().getLastFunctionName());
+
+                this.taskExecutor.getRuntime().reset();
                 break;
             } else {
                 retries++;

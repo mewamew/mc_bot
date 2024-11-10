@@ -122,7 +122,7 @@ class VectorDB {
                 return [];
             }
 
-            // 计算所有向量的相似度并排序
+            // TODO 效率低下,计算所有向量的相似度并排序
             const results = this.data
                 .map(item => ({
                     ...item,

@@ -3,32 +3,79 @@ const llm = require('../llm');
 const fs = require('fs');
 const CodeExecutor = require('./code_executor');
 
+class Runtime {
+    constructor() {
+        this.lastFunctionName = '';
+        this.lastCode = '';
+        this.lastError = '';
+        this.lastReport = '';
+        this.lastFunctionDescription = '';
+    }
+
+    getLastFunctionName() {
+        return this.lastFunctionName;
+    }
+
+    getLastCode() {
+        return this.lastCode;
+    }
+
+    getLastError() {
+        return this.lastError;
+    }
+
+    getLastReport() {
+        return this.lastReport;
+    }
+
+    getLastFunctionDescription() {
+        return this.lastFunctionDescription;
+    }
+
+    reset() {
+        this.lastFunctionName = '';
+        this.lastCode = '';
+        this.lastError = '';
+        this.lastReport = '';
+        this.lastFunctionDescription = '';
+    }
+
+    setLastFunctionName(functionName) {
+        this.lastFunctionName = functionName;
+    }
+
+    setLastCode(code) {
+        this.lastCode = code;
+    }
+
+    setLastError(error) {
+        this.lastError = error;
+    }
+
+    setLastReport(report) {
+        this.lastReport = report;
+    }
+
+    setLastFunctionDescription(description) {
+        this.lastFunctionDescription = description;
+    }
+}
+
 class TaskExecutor {
     constructor(bot) {
         this.bot = bot;
         this.codeExecutor = new CodeExecutor(bot);
         this.chat_history = [];
-        this.last_code = '';
-        this.last_error = '';
-        this.last_report = '';
+        this.runtime = new Runtime();
     }
 
-    getLastCode() {
-        return this.last_code;
-    }
-
-    getLastError() {
-        return this.last_error;
-    }
-
-    getLastReport() {
-        return this.last_report;
+    getRuntime() {
+        return this.runtime;
     }
 
     reset() {
         this.chat_history = [];
-        this.last_code = '';
-        this.last_error = '';
+        this.runtime.reset();
     }
 
     async run(task, environment, inventory, bot_position) {
@@ -41,6 +88,8 @@ class TaskExecutor {
             }
             logger.info("==== 生成的代码: ====\n" + code);
 
+
+
             // 提取主函数名
             const functionName = this.extractMainFunctionName(code);
             if (!functionName) {
@@ -48,15 +97,16 @@ class TaskExecutor {
                 return false;
             }
             logger.clearReport();
+            this.runtime.setLastFunctionName(functionName);
             await this.codeExecutor.execute(code, functionName);
 
-            this.last_code = code;
-            this.last_report = logger.getLastReport();
+            this.runtime.setLastCode(code);
+            this.runtime.setLastReport(logger.getLastReport());
 
             return true;
         } catch (error) {
             logger.error('任务执行失败:', error);
-            this.last_error = error.message;
+            this.runtime.setLastError(error.message);
             return false;
         }
     }
@@ -72,7 +122,7 @@ class TaskExecutor {
         prompt = prompt.replace('{{environment}}', environment);
         prompt = prompt.replace('{{bot_position}}', bot_position);
         prompt = prompt.replace('{{chat_history}}', this.getChatHistory());
-        prompt = prompt.replace('{{last_code}}', this.last_code || '暂时没有上次代码');
+        prompt = prompt.replace('{{last_code}}', this.runtime.getLastCode() || '暂时没有上次代码');
         
         const messages = [
             { role: "system", content: "你是Minecraft控制代码生成器" },
@@ -87,6 +137,14 @@ class TaskExecutor {
             this.bot.chat(explanation);
             this.chat_history.push(explanation);
         }
+
+        // 提取主函数功能说明
+        const functionDescription = this.extractMainFunctionDescription(response);
+        if (!functionDescription) {
+            logger.error('无法找到主函数功能说明');
+            return null;
+        }
+        this.runtime.setLastFunctionDescription(functionDescription);
         return this.extractCodeFromResponse(response);
     }
 
@@ -101,11 +159,7 @@ class TaskExecutor {
         return formattedHistory;
     }
 
-    extractExplanationFromResponse(response) {
-        const match = response.match(/解释:([\s\S]*?)(?:计划:|代码:)/);
-        return match ? match[1].trim() : '';
-    }
-
+    
     extractMainFunctionName(code) {
         // 匹配所有的函数声明
         const matches = Array.from(code.matchAll(/(?:async\s+)?function\s+(\w+)/g));
@@ -116,6 +170,20 @@ class TaskExecutor {
         }
         
         return null;
+    }
+
+    
+
+    extractExplanationFromResponse(response) {
+        const match = response.match(/解释:([\s\S]*?)(?:计划:|代码:)/);
+        return match ? match[1].trim() : '';
+    }
+
+    extractMainFunctionDescription(response) {
+        logger.error('response: ' + response);
+        // 修改正则表达式以匹配 ```desc 和下一个 ``` 之间的内容
+        const match = response.match(/```desc\n([\s\S]*?)```/);
+        return match ? match[1].trim() : null;
     }
 
     extractCodeFromResponse(response) {
