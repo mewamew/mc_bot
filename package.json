@@ -7,6 +7,7 @@
     "start": "node main.js"
   },
   "dependencies": {
+    "chromadb": "^1.9.2",
     "date-fns": "^4.1.0",
     "minecraft-data": "^3.76.0",
     "mineflayer": "^4.22.0",

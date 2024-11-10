@@ -8,6 +8,7 @@ rm -f codes/*.js
 # 302
 export LLM_API_KEY="sk-w0k5k6dsB9EEn2Oxk2pVSO5nBaIxvuNeSSMKcFIZ0Qv3ZEDA"
 export LLM_API_URL="https://api.302.ai/v1/chat/completions"
+export EMBEDDING_API_URL="https://api.302.ai/v1/embeddings"
 # export LLM_MODEL="gpt-4o-mini"
 # export LLM_MODEL="o1-mini"
 # export LLM_MODEL="o1-preview"
