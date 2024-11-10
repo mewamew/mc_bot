@@ -1,7 +1,7 @@
 const logger = require('./logger');
 const TaskPlanner = require('./agents/task_planner');
-const TaskExecutor = require('./agents/task_executor');
-const Reflector = require('./agents/reflect');
+const TaskExecutor = require('./agents/executor');
+const Reflector = require('./agents/reflector');
 const Vec3 = require('vec3');
 class McBot {
     constructor(bot) {

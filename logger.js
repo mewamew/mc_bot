@@ -17,21 +17,42 @@ class Logger {
 
     formatMessage(level, message) {
         const timestamp = new Date().toISOString();
-        return `[${timestamp}] [${level}]\n ${message}`;
+        // 定义日志级别对应的颜色
+        const colors = {
+            ERROR: '\x1b[31m', // 红色
+            WARN: '\x1b[33m',  // 黄色
+            INFO: '\x1b[32m',  // 绿色
+            DEBUG: '\x1b[36m'  // 青色
+        };
+        const resetColor = '\x1b[0m'; // 重置颜色
+
+        // 如果是写入文件，不需要颜色代码
+        if (this.isWritingToFile) {
+            return `[${timestamp}] [${level}]\n ${message}`;
+        }
+        
+        // 控制台输出带颜色，整个消息都使用相同颜色
+        const color = colors[level] || '';
+        return `${color}[${timestamp}] [${level}]\n ${message}${resetColor}`;
     }
 
     writeToFile(formattedMessage) {
-        fs.appendFileSync(this.logPath, formattedMessage + '\n');
+        // 移除 ANSI 颜色代码后再写入文件
+        const cleanMessage = formattedMessage.replace(/\x1b\[[0-9;]*m/g, '');
+        fs.appendFileSync(this.logPath, cleanMessage + '\n');
     }
 
     log(level, message) {
-        const formattedMessage = this.formatMessage(level, message);
+        this.isWritingToFile = false;
+        const consoleMessage = this.formatMessage(level, message);
         
         // 控制台输出
-        console.log(formattedMessage);
+        console.log(consoleMessage);
         
         // 写入文件
-        this.writeToFile(formattedMessage);
+        this.isWritingToFile = true;
+        const fileMessage = this.formatMessage(level, message);
+        this.writeToFile(fileMessage);
     }
 
     info(message) {

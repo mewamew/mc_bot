@@ -2,6 +2,8 @@ const mineflayer = require('mineflayer')
 const { pathfinder } = require('mineflayer-pathfinder')
 const { mineflayer: mineflayerViewer } = require('prismarine-viewer')
 const pvp = require('mineflayer-pvp').plugin
+const logger = require('./logger')
+
 const McBot = require('./mc_bot')
 const bot = mineflayer.createBot({
   host: 'localhost', // minecraft 服务器的 IP 地址
@@ -36,4 +38,3 @@ bot.on('chat', async (username, message) => {
 
 bot.on('kicked', console.log)
 bot.on('error', console.log)
-

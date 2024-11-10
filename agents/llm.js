@@ -48,11 +48,11 @@ class LLM {
             status: error.response?.status,
             data: error.response?.data
           });
-          throw new Error(`LLMAPI调用失败: ${error.message}`);
+          throw new Error(`LLM API调用失败: ${error.message}`);
         }
 
         retries++;
-        logger.warn(`GLM-4 API调用失败，${retryDelay/1000}秒后进行第${retries}次重试...`);
+        logger.warn(`LLM API调用失败，${retryDelay/1000}秒后进行第${retries}次重试...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
     }

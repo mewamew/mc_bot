@@ -70,3 +70,20 @@ if (player) {
   const playerPos = player.position;
   console.log(`玩家位置: x=${playerPos.x}, y=${playerPos.y}, z=${playerPos.z}`);
 }
+
+// 获取背包中指定物品的数量示例
+/**
+ * 获取背包中指定物品的数量
+ * @param {string} itemName - 物品名称，例如 'diamond', 'stone' 等
+ * @returns {number} - 返回物品数量，如果没有则返回0
+ */
+function getItemCount(itemName) {
+  // 获取所有匹配的物品
+  const items = bot.inventory.items().filter(item => item.name === itemName);
+  
+  // 如果没有找到物品，返回0
+  if (!items.length) return 0;
+  
+  // 计算总数量（将所有匹配物品的数量相加）
+  return items.reduce((count, item) => count + item.count, 0);
+}
