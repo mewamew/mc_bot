@@ -1,4 +1,4 @@
 node_modules
-logs/app.log
-codes/
+logs/*
+codes/*
 
