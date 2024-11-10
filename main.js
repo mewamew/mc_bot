@@ -34,7 +34,7 @@ bot.on('chat', async (username, message) => {
 })
 
 
-
+mc_bot.init();
 
 bot.on('kicked', console.log)
 bot.on('error', console.log)

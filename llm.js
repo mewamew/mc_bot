@@ -1,11 +1,12 @@
 const axios = require('axios');
-const logger = require('../logger');
-const { API_KEY, API_URL, MODEL } = require('./config');
+const logger = require('./logger');
+const { API_KEY, API_URL, MODEL, EMBEDDING_API_URL } = require('./config');
 
 class LLM {
   constructor() {
     this.API_URL = API_URL;
     this.API_KEY = API_KEY;
+    this.EMBEDDING_API_URL = EMBEDDING_API_URL;
     this.MODEL = MODEL;
   }
   
@@ -84,8 +85,9 @@ class LLM {
           }
         );
 
-        logger.info("向量计算完成");
-        return response.data.data[0].embedding;
+        const embedding = response.data.data[0].embedding;
+        logger.info(`向量维度: ${embedding.length}`);
+        return embedding;
 
       } catch (error) {
         const isRetryable = error.response?.status >= 500 || error.code === 'ECONNABORTED';

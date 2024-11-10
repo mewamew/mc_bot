@@ -1,5 +1,5 @@
 const logger = require('../logger');
-const llm = require('./llm');
+const llm = require('../llm');
 const fs = require('fs');
 const CodeExecutor = require('./code_executor');
 
@@ -39,7 +39,7 @@ class TaskExecutor {
                 logger.error('代码生成失败');
                 return false;
             }
-            logger.info(code);
+            logger.info("==== 生成的代码: ====\n" + code);
 
             // 提取主函数名
             const functionName = this.extractMainFunctionName(code);
@@ -47,19 +47,12 @@ class TaskExecutor {
                 logger.error('无法找到主函数名');
                 return false;
             }
-            logger.info(functionName);
-
-            // 保存代码到文件
-            const filePath = `codes/${functionName}.js`;
-            fs.writeFileSync(filePath, code, 'utf8');
-            logger.info(`代码已保存到: ${filePath}`);
-
-            // 执行代码
             logger.clearReport();
             await this.codeExecutor.execute(code, functionName);
+
             this.last_code = code;
             this.last_report = logger.getLastReport();
-            logger.info('last report: ' + this.last_report);
+
             return true;
         } catch (error) {
             logger.error('任务执行失败:', error);

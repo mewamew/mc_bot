@@ -3,6 +3,7 @@ const TaskPlanner = require('./agents/task_planner');
 const TaskExecutor = require('./agents/executor');
 const Reflector = require('./agents/reflector');
 const Vec3 = require('vec3');
+const SkillManager = require('./skills/skill_manager');
 class McBot {
     constructor(bot) {
         this.bot = bot;
@@ -10,6 +11,11 @@ class McBot {
         this.taskPlanner = new TaskPlanner();
         this.taskExecutor = new TaskExecutor(bot);
         this.reflector = new Reflector();
+        this.skillManager = new SkillManager();
+    }
+
+    async init() {
+        await this.skillManager.init();
     }
 
     getInventories() {
@@ -215,6 +221,18 @@ class McBot {
             return;
         }
 
+        if (message == "s") {
+            await this.skillManager.saveSkill("收集10个木头", 'collect_wood');
+            await this.skillManager.saveSkill("收集5个木头", 'collect_wood');
+            return;
+        }
+
+        if (message.startsWith("g")) {
+            const skill = await this.skillManager.getSkill(message.substring(1));
+            logger.info(skill.description);
+            return;
+        }
+
         const maxRetries = 3;   
         let retries = 0;
 
@@ -240,6 +258,10 @@ class McBot {
                 retries++;
                 await this.taskExecutor.run(result.reason, this.getEnvironment(), this.getInventories(), this.getBotPosition());
             }
+        }
+        if (retries >= maxRetries) {
+            logger.error('重试超过最大次数, 任务失败');
+            this.bot.chat('重试超过最大次数, 任务失败');
         }
     }
 
