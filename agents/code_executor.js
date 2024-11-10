@@ -1,5 +1,6 @@
 const vm = require('vm');
 const { GoalNear, GoalFollow, GoalXZ, GoalGetToBlock, GoalLookAtBlock } = require('mineflayer-pathfinder').goals;
+const mcData = require('minecraft-data');
 const Vec3 = require('vec3').Vec3;
 const logger = require('../logger');
 class CodeExecutor {
@@ -11,6 +12,9 @@ class CodeExecutor {
 
     // 初始化基础依赖
     initializeDependencies() {
+        // 初始化 mcData
+        const mcDataInstance = mcData(this.bot.version);
+        
         this.dependencies = {
             require,
             console,
@@ -26,9 +30,9 @@ class CodeExecutor {
             GoalXZ,
             GoalGetToBlock,
             GoalLookAtBlock,
-            // bot 实例和上下文
+            mcData: mcDataInstance, 
+            logger: logger,
             bot: this.bot,
-            // 工具函数
             sleep: (ms) => new Promise(resolve => setTimeout(resolve, ms))
         };
     }

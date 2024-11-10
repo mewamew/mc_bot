@@ -34,33 +34,6 @@ class McBot {
             .join('\n');
     }
 
-    async handleMessage(message) {
-        const maxRetries = 3;   
-        let retries = 0;
-
-        await this.taskExecutor.run(message, this.getEnvironment(), this.getInventories());
-        while (retries < maxRetries) {
-            const result = await this.reflector.validate(
-                message.substring(1), 
-                this.getEnvironment(), 
-                this.getInventories(), 
-                this.taskExecutor.getLastCode(),
-                this.taskExecutor.getLastError()
-            );
-            
-            this.bot.chat(result.success ? '任务完成' : '任务失败');
-            this.bot.chat(result.reason);
-
-            if (result.success) {
-                this.taskExecutor.reset();
-                break;
-            } else {
-                retries++;
-                await this.taskExecutor.run(result.reason, this.getEnvironment(), this.getInventories());
-            }
-        }
-    }
-
     getEnvironment() {
         let environment = {
             blocks: {},
@@ -142,6 +115,52 @@ class McBot {
 
         return result;
     }
+
+    getBotPosition() {
+        const pos = this.bot.entity.position;
+        // 将坐标四舍五入到2位小数，并格式化为易读的字符串
+        return `x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}, z: ${pos.z.toFixed(2)}`;
+    }
+
+    async handleMessage(message) {
+
+        if (message == "e") {
+            const env = this.getEnvironment();
+            this.bot.chat(env);
+            const inv = this.getInventories();
+            this.bot.chat(inv);
+            return;
+        }
+
+        const maxRetries = 3;   
+        let retries = 0;
+
+        await this.taskExecutor.run(message, this.getEnvironment(), this.getInventories(), this.getBotPosition());
+        while (retries < maxRetries) {
+            const result = await this.reflector.validate(
+                message.substring(1), 
+                this.getEnvironment(), 
+                this.getInventories(), 
+                this.getBotPosition(),
+                this.taskExecutor.getLastCode(),
+                this.taskExecutor.getLastReport(),
+                this.taskExecutor.getLastError()
+            );
+            
+            this.bot.chat(result.success ? '任务完成' : '任务失败');
+            this.bot.chat(result.reason);
+
+            if (result.success) {
+                this.taskExecutor.reset();
+                break;
+            } else {
+                retries++;
+                await this.taskExecutor.run(result.reason, this.getEnvironment(), this.getInventories(), this.getBotPosition());
+            }
+        }
+    }
+
+    
 }
 
 module.exports = McBot;

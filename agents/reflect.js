@@ -8,12 +8,14 @@ class Reflector {
     constructor() {
     }
 
-    async validate(message, environment, inventory, last_code, last_error) {
+    async validate(message, environment, inventory, bot_position,  last_code, last_report, last_error) {
         let prompt = fs.readFileSync('prompts/reflect.txt', 'utf8');
         prompt = prompt.replace('{{environment}}', environment);
-        prompt = prompt.replace('{{inventory}}', inventory);
+        prompt = prompt.replace('{{inventory}}', inventory);    
         prompt = prompt.replace('{{task}}', message);
+        prompt = prompt.replace('{{bot_position}}', bot_position);
         prompt = prompt.replace('{{last_code}}', last_code);
+        prompt = prompt.replace('{{last_report}}', last_report);
         prompt = prompt.replace('{{last_error}}', last_error);
 
         const messages = [

@@ -10,6 +10,7 @@ class TaskExecutor {
         this.chat_history = [];
         this.last_code = '';
         this.last_error = '';
+        this.last_report = '';
     }
 
     getLastCode() {
@@ -20,16 +21,20 @@ class TaskExecutor {
         return this.last_error;
     }
 
+    getLastReport() {
+        return this.last_report;
+    }
+
     reset() {
         this.chat_history = [];
         this.last_code = '';
         this.last_error = '';
     }
 
-    async run(task, environment, inventory) {
+    async run(task, environment, inventory, bot_position) {
         try {
             // 生成代码
-            const code = await this.generateCode(task, environment, inventory);
+            const code = await this.generateCode(task, environment, inventory, bot_position);
             if (!code) {
                 logger.error('代码生成失败');
                 return false;
@@ -50,8 +55,11 @@ class TaskExecutor {
             logger.info(`代码已保存到: ${filePath}`);
 
             // 执行代码
+            logger.clearReport();
             await this.codeExecutor.execute(code, functionName);
             this.last_code = code;
+            this.last_report = logger.getLastReport();
+            logger.info('last report: ' + this.last_report);
             return true;
         } catch (error) {
             logger.error('任务执行失败:', error);
@@ -60,7 +68,7 @@ class TaskExecutor {
         }
     }
 
-    async generateCode(task, environment, inventory) {
+    async generateCode(task, environment, inventory, bot_position) {
         this.chat_history.push(task);
         let prompt = fs.readFileSync('prompts/action.txt', 'utf8');
         const code = fs.readFileSync('sample_codes/base.js', 'utf8');
@@ -69,6 +77,7 @@ class TaskExecutor {
         prompt = prompt.replace('{{code}}', code);
         prompt = prompt.replace('{{bot_inventory}}', inventory);
         prompt = prompt.replace('{{environment}}', environment);
+        prompt = prompt.replace('{{bot_position}}', bot_position);
         prompt = prompt.replace('{{chat_history}}', this.getChatHistory());
         prompt = prompt.replace('{{last_code}}', this.last_code || '暂时没有上次代码');
         

@@ -7,6 +7,7 @@ class Logger {
         this.logDir = options.logDir || 'logs';
         this.logFile = format(new Date(), 'yyyyMMdd') + '.txt';
         this.logPath = path.join(this.logDir, this.logFile);
+        this.reportMessage = '';
         
         // 确保日志目录存在
         if (!fs.existsSync(this.logDir)) {
@@ -47,6 +48,22 @@ class Logger {
 
     debug(message) {
         this.log('DEBUG', message);
+    }
+
+    report(message,bot) {
+        if (this.reportMessage != "") {
+            this.reportMessage += "\n";
+        }
+        this.reportMessage += message;
+        bot.chat(message);
+    }
+
+    getLastReport() {
+        return this.reportMessage;
+    }
+
+    clearReport() {
+        this.reportMessage = '';
     }
 }
 
