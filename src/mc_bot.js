@@ -1,4 +1,4 @@
-const logger = require('./logger');
+const logger = require('./utils/logger');
 const TaskPlanner = require('./agents/planner');
 const Coder = require('./agents/coder');
 const Reflector = require('./agents/reflector');
@@ -12,10 +12,10 @@ class McBot {
     constructor(bot) {
         this.bot = bot;
         this.taskPlanner = new TaskPlanner();
-        this.reflector = new Reflector();
         this.skillManager = new SkillManager();
         this.coder = new Coder(bot);
-        this.executor = new Executor();
+        this.executor = new Executor(bot);
+        this.reflector = new Reflector();
     }
 
     async init() {
@@ -225,20 +225,36 @@ class McBot {
             return;
         }
 
+        // 生成代码
         const result = await this.coder.gen(message, this.getEnvironment(), this.getInventories(), this.getBotPosition());
         if (!result) {
-            this.bot.chat(this.coder.explanation);
-            logger.info(this.coder.code);
             return; 
         }
+        this.bot.chat(this.coder.explanation);
 
-        const code = this.coder.code;
-        const functionName = this.coder.functionName;
-        const functionDescription = this.coder.functionDescription;
-        
+        // 执行代码
+        await this.executor.run(this.coder.code, this.coder.functionName);
+
+        // 反思
+        const reflection = await this.reflector.validate(
+                                                    message, 
+                                                    this.getEnvironment(), 
+                                                    this.getInventories(), 
+                                                    this.getBotPosition(), 
+                                                    this.coder.code, 
+                                                    this.coder.explanation, 
+                                                    this.executor.lastError
+                                                );
+        if (reflection) {
+            if (reflection.success) {
+                this.bot.chat('任务完成');
+            } else {
+                this.bot.char('任务失败');
+            }
+            this.bot.chat(reflection.reason);
+        }
     }
-
-    
+        
 }
 
 module.exports = McBot;

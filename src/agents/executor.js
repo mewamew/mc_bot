@@ -2,7 +2,7 @@ const vm = require('vm');
 const { GoalNear, GoalFollow, GoalXZ, GoalGetToBlock, GoalLookAtBlock } = require('mineflayer-pathfinder').goals;
 const mcData = require('minecraft-data');
 const Vec3 = require('vec3').Vec3;
-const logger = require('../logger');
+const logger = require('../utils/logger');
 
 
 class Executor {
@@ -10,6 +10,11 @@ class Executor {
         this.bot = bot;
         // 初始化基础依赖
         this.initializeDependencies();
+        this._lastError = '';
+    }
+
+    get lastError() {
+        return this._lastError;
     }
 
     // 初始化基础依赖
@@ -79,9 +84,10 @@ class Executor {
     }
 
     // 执行代码
-    async execute(code, functionName) {
+    async run(code, functionName) {
         const executableCode = this.prepareExecutableCode(code, functionName);
         try {
+            this._lastError = '';
             const context = this.prepareContext();
             const result = await vm.runInContext(executableCode, context, {
                 timeout: 30000, // 30秒超时
@@ -89,23 +95,10 @@ class Executor {
             });
             return result;
         } catch (error) {
-            if (error.code === 'ERR_SCRIPT_EXECUTION_TIMEOUT') {
-                console.error('代码执行超时');
-                throw new Error('代码执行超时');
-            }
+            this._lastError = error.message;
             console.error('代码执行错误:', error);
             throw error;
         }
-    }
-
-    // 清理资源
-    cleanup() {
-        // 清理定时器等资源
-        Object.keys(this.dependencies).forEach(key => {
-            if (this.dependencies[key] && typeof this.dependencies[key].destroy === 'function') {
-                this.dependencies[key].destroy();
-            }
-        });
     }
 }
 

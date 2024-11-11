@@ -1,6 +1,6 @@
-const logger = require('../logger');
-const llm = require('../llm');
-const json = require('./json_extractor');
+const logger = require('../utils/logger');
+const llm = require('../utils/llm');
+const json = require('../utils/json_extractor');
 const fs = require('fs');
 
 
@@ -9,7 +9,7 @@ class Reflector {
     }
 
     async validate(message, environment, inventory, bot_position,  last_code, last_report, last_error) {
-        let prompt = fs.readFileSync('prompts/reflect.txt', 'utf8');
+        let prompt = fs.readFileSync('src/prompts/reflect.txt', 'utf8');
         prompt = prompt.replace('{{environment}}', environment);
         prompt = prompt.replace('{{inventory}}', inventory);    
         prompt = prompt.replace('{{task}}', message);

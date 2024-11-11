@@ -4,7 +4,7 @@
   "description": "An AI companion bot for Minecraft",
   "main": "main.js",
   "scripts": {
-    "start": "node main.js"
+    "start": "node src/main.js"
   },
   "dependencies": {
     "chromadb": "^1.9.2",

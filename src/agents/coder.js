@@ -1,5 +1,5 @@
-const logger = require('../logger');
-const llm = require('../llm');
+const logger = require('../utils/logger');
+const llm = require('../utils/llm');
 const fs = require('fs');
 
 
@@ -51,9 +51,9 @@ class Coder {
 
     async gen(message, environment, inventory, bot_position) {
         this._chatHistory.push(message);
-        const sampleCode = fs.readFileSync('sample_codes/base.js', 'utf8');
+        const sampleCode = fs.readFileSync('src/sample_codes/base.js', 'utf8');
         const chatHistory = this.formatChatHistory();
-        let prompt = fs.readFileSync('prompts/action.txt', 'utf8');
+        let prompt = fs.readFileSync('src/prompts/action.txt', 'utf8');
 
         // 替换提示词中的占位符
         prompt = prompt.replace('{{code}}', sampleCode);
@@ -94,12 +94,21 @@ class Coder {
         }
         this._functionDescription = functionDescription;
 
+        const functionName = this.extractMainFunctionName(response);
+        if (!functionName) {
+            //TODO what to do?
+            logger.error('无法找到主函数名');
+            return false;
+        }
+        this._functionName = functionName;
+
         const code = this.extractCodeFromResponse(response);    
         if (!code) {
             //TODO what to do?
             logger.error('无法找到代码');
             return false;
         }
+
         this._code = code;
         return true;
     }

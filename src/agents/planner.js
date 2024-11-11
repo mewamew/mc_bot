@@ -1,7 +1,7 @@
-const logger = require('../logger');
-const llm = require('../llm');
+const logger = require('../utils/logger');
+const llm = require('../utils/llm');
 const fs = require('fs');
-const json = require('./json_extractor');
+const json = require('../utils/json_extractor');
 
 class TaskPlanner {
     constructor() {

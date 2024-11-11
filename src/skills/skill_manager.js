@@ -1,6 +1,6 @@
-const logger = require('../logger');
+const logger = require('../utils/logger');
 const VectorDB = require('./vector_db');
-const llm = require('../llm');
+const llm = require('../utils/llm');
 const { v4: uuidv4 } = require('uuid');
 
 class SkillManager {

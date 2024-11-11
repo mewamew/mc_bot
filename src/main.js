@@ -2,7 +2,7 @@ const mineflayer = require('mineflayer')
 const { pathfinder } = require('mineflayer-pathfinder')
 const { mineflayer: mineflayerViewer } = require('prismarine-viewer')
 const pvp = require('mineflayer-pvp').plugin
-const logger = require('./logger')
+const logger = require('./utils/logger')
 
 const McBot = require('./mc_bot')
 const bot = mineflayer.createBot({
