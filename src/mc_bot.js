@@ -227,6 +227,7 @@ class McBot {
 
         let code = '';
         let functionName = '';
+        let generated = false;
 
         const skill = await this.skillManager.getSkill(message);
         if (skill) {
@@ -242,35 +243,67 @@ class McBot {
             this.bot.chat(this.coder.explanation);
             code = this.coder.code;
             functionName = this.coder.functionName;
+            generated = true;
         }
 
-        // 执行代码
-        await this.executor.run(code, functionName);
+        // 执行代码和反思的部分需要修改
+        let attempts = 0;
+        const MAX_ATTEMPTS = 5;
+        
+        while (attempts < MAX_ATTEMPTS) {
+            // 执行代码
+            logger.clearReport();
+            await this.executor.run(code, functionName);
 
-        // 反思
-        const reflection = await this.reflector.validate(
-                                                    message, 
-                                                    this.getEnvironment(), 
-                                                    this.getInventories(), 
-                                                    this.getBotPosition(), 
-                                                    this.coder.code, 
-                                                    this.coder.explanation, 
-                                                    this.executor.lastError
-                                                );
-        if (reflection) {
-            if (reflection.success) {
-                this.bot.chat('任务完成');
-                if (!skill) {
-                    ///更新技能库
-                    await this.skillManager.saveSkill(this.coder.functionDescription, this.coder.functionName, this.coder.code);
+            // 反思
+            const reflection = await this.reflector.validate(
+                message,
+                this.getEnvironment(),
+                this.getInventories(),
+                this.getBotPosition(),
+                code,
+                logger.getLastReport(),
+                this.executor.lastError
+            );
+
+            if (reflection) {
+                if (reflection.success) {
+                    this.bot.chat('任务完成');
+                    if (generated) {
+                        // 更新技能库
+                        await this.skillManager.saveSkill(this.coder.functionDescription, this.coder.functionName, this.coder.code);
+                    }
+                    this.coder.reset();
+                    this.executor.reset();
+                    return;
+                } else {
+                    //任务失败，重试
+                    attempts++;
+                    if (attempts >= MAX_ATTEMPTS) {
+                        this.bot.chat(`任务失败，已重试${MAX_ATTEMPTS}次`);
+                        this.bot.chat(reflection.reason);
+                        return;
+                    }
+                    
+                    this.bot.chat(`第${attempts}次尝试失败，正在重新生成代码...`);
+                    // 重新生成代码
+                    if (!generated) {
+                        const result = await this.coder.gen(message, this.getEnvironment(), this.getInventories(), this.getBotPosition());
+                        if (!result) {
+                            return;
+                        }
+                    } else {
+                        const result = await this.coder.gen(reflection.reason, this.getEnvironment(), this.getInventories(), this.getBotPosition());
+                        if (!result) {
+                            return;
+                        }
+                    }
+                    this.bot.chat(this.coder.explanation);
+                    code = this.coder.code;
+                    generated = true;
+                    functionName = this.coder.functionName;
                 }
-
-                this.coder.reset();
-                this.executor.reset();
-            } else {
-                this.bot.char('任务失败');
             }
-            this.bot.chat(reflection.reason);
         }
     }
 

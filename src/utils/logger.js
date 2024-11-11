@@ -42,6 +42,17 @@ class Logger {
         fs.appendFileSync(this.logPath, cleanMessage + '\n');
     }
 
+    pure(color, message) {
+        const colors = {
+            RED: '\x1b[31m', // 红色
+            YELLOW: '\x1b[33m',  // 黄色
+            GREEN: '\x1b[32m',  // 绿色
+            CYAN: '\x1b[36m'  // 青色
+        };
+        const resetColor = '\x1b[0m'; // 重置颜色
+        console.log(`${colors[color]}${message}${resetColor}`);
+    }
+
     log(level, message) {
         this.isWritingToFile = false;
         const consoleMessage = this.formatMessage(level, message);

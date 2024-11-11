@@ -45,6 +45,11 @@ class SkillManager {
     async getSkill(description) {
         const skillDir = path.join(__dirname, 'learned');
         const embedding = await llm.getEmbedding(description);
+        if (!embedding) {
+            logger.error(`匹配技能失败`);
+            return null;
+        }
+
         const result = await this.vectorDB.search(embedding, {
             limit: 1,
             minScore: 0.7
