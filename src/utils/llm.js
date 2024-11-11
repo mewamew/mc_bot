@@ -66,9 +66,6 @@ class LLM {
       try {
         // 清理输入文本
         const cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-        
-        logger.info("开始计算文本向量: ", cleanText.substring(0, 100) + "...");
-
         const response = await axios.post(
           this.EMBEDDING_API_URL,
           {
@@ -92,15 +89,16 @@ class LLM {
         const isRetryable = error.response?.status >= 500 || error.code === 'ECONNABORTED';
         
         if (retries === maxRetries || !isRetryable) {
-          logger.error(`LLM API调用失败 (尝试 ${retries + 1}/${maxRetries + 1}):`, {
+          logger.error(`Embedding API调用失败 (尝试 ${retries + 1}/${maxRetries + 1}):`, {
             error: error.message,
             status: error.response?.status,
             data: error.response?.data
           });
+          return null;
         }
 
         retries++;
-        logger.warn(`LLM API调用失败，${retryDelay/1000}秒后进行第${retries}次重试...`);
+        logger.warn(`Embedding API调用失败，${retryDelay/1000}秒后进行第${retries}次重试...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
     }

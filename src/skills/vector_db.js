@@ -117,10 +117,16 @@ class VectorDB {
                 return [];
             }
 
-            if (!Array.isArray(queryVector) || queryVector.length !== 1536) {
-                logger.error('无效的查询向量格式或维度');
+            if (!Array.isArray(queryVector)) {
+                logger.error('无效的查询向量格式');
                 return [];
             }
+
+            if (queryVector.length !== 1536) {
+                logger.error('无效的查询向量维度');
+                return [];
+            }
+
 
             // TODO 效率低下,计算所有向量的相似度并排序
             const results = this.data
@@ -134,6 +140,11 @@ class VectorDB {
                 .map(({ id, score, description, metadata }) => ({
                     id, score, description, metadata
                 }));
+
+            // 添加最高分数的日志输出
+            if (results.length > 0) {
+                logger.info(`最高相似度分数: ${results[0].score}`);
+            }
 
             return results;
         } catch (error) {

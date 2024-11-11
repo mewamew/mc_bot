@@ -260,8 +260,13 @@ class McBot {
         if (reflection) {
             if (reflection.success) {
                 this.bot.chat('任务完成');
-                await this.skillManager.saveSkill(reflection.reason, this.coder.functionName, this.coder.code);
+                if (!skill) {
+                    ///更新技能库
+                    await this.skillManager.saveSkill(this.coder.functionDescription, this.coder.functionName, this.coder.code);
+                }
 
+                this.coder.reset();
+                this.executor.reset();
             } else {
                 this.bot.char('任务失败');
             }

@@ -17,6 +17,10 @@ class Executor {
         return this._lastError;
     }
 
+    reset() {
+        this._lastError = '';
+    }
+
     // 初始化基础依赖
     initializeDependencies() {
         // 初始化 mcData
