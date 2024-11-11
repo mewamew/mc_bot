@@ -97,7 +97,6 @@ class LLM {
             status: error.response?.status,
             data: error.response?.data
           });
-          throw new Error(`LLM API调用失败: ${error.message}`);
         }
 
         retries++;

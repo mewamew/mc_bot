@@ -225,15 +225,27 @@ class McBot {
             return;
         }
 
-        // 生成代码
-        const result = await this.coder.gen(message, this.getEnvironment(), this.getInventories(), this.getBotPosition());
-        if (!result) {
-            return; 
+        let code = '';
+        let functionName = '';
+
+        const skill = await this.skillManager.getSkill(message);
+        if (skill) {
+            this.bot.chat(`已找到匹配的技能: ${skill.description}`);
+            code = skill.code;
+            functionName = skill.functionName;
+        } else {
+            // 生成代码
+            const result = await this.coder.gen(message, this.getEnvironment(), this.getInventories(), this.getBotPosition());
+            if (!result) {
+                return; 
+            }
+            this.bot.chat(this.coder.explanation);
+            code = this.coder.code;
+            functionName = this.coder.functionName;
         }
-        this.bot.chat(this.coder.explanation);
 
         // 执行代码
-        await this.executor.run(this.coder.code, this.coder.functionName);
+        await this.executor.run(code, functionName);
 
         // 反思
         const reflection = await this.reflector.validate(
@@ -248,13 +260,15 @@ class McBot {
         if (reflection) {
             if (reflection.success) {
                 this.bot.chat('任务完成');
+                await this.skillManager.saveSkill(reflection.reason, this.coder.functionName, this.coder.code);
+
             } else {
                 this.bot.char('任务失败');
             }
             this.bot.chat(reflection.reason);
         }
     }
-        
+
 }
 
 module.exports = McBot;
