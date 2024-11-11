@@ -74,15 +74,9 @@ class Executor {
     prepareExecutableCode(code, functionName) {
         return `
             ${code}
-            
             // 包装异步执行
             (async () => {
-                try {
-                    await ${functionName}(bot);
-                } catch (error) {
-                    console.error('函数执行错误:', error);
-                    throw error;
-                }
+                await ${functionName}(bot);
             })();
         `;
     }
@@ -101,7 +95,6 @@ class Executor {
         } catch (error) {
             this._lastError = error.message;
             console.error('代码执行错误:', error);
-            throw error;
         }
     }
 }

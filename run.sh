@@ -3,7 +3,6 @@
 
 # 清理日志文件
 # rm -f logs/app.log
-rm -f codes/*.js
 
 # 302
 export LLM_API_KEY="sk-w0k5k6dsB9EEn2Oxk2pVSO5nBaIxvuNeSSMKcFIZ0Qv3ZEDA"
