@@ -1,195 +1,112 @@
+const vm = require('vm');
+const { GoalNear, GoalFollow, GoalXZ, GoalGetToBlock, GoalLookAtBlock } = require('mineflayer-pathfinder').goals;
+const mcData = require('minecraft-data');
+const Vec3 = require('vec3').Vec3;
 const logger = require('../logger');
-const llm = require('../llm');
-const fs = require('fs');
-const CodeExecutor = require('./code_executor');
 
-class Runtime {
-    constructor() {
-        this.lastFunctionName = '';
-        this.lastCode = '';
-        this.lastError = '';
-        this.lastReport = '';
-        this.lastFunctionDescription = '';
-    }
 
-    getLastFunctionName() {
-        return this.lastFunctionName;
-    }
-
-    getLastCode() {
-        return this.lastCode;
-    }
-
-    getLastError() {
-        return this.lastError;
-    }
-
-    getLastReport() {
-        return this.lastReport;
-    }
-
-    getLastFunctionDescription() {
-        return this.lastFunctionDescription;
-    }
-
-    reset() {
-        this.lastFunctionName = '';
-        this.lastCode = '';
-        this.lastError = '';
-        this.lastReport = '';
-        this.lastFunctionDescription = '';
-    }
-
-    setLastFunctionName(functionName) {
-        this.lastFunctionName = functionName;
-    }
-
-    setLastCode(code) {
-        this.lastCode = code;
-    }
-
-    setLastError(error) {
-        this.lastError = error;
-    }
-
-    setLastReport(report) {
-        this.lastReport = report;
-    }
-
-    setLastFunctionDescription(description) {
-        this.lastFunctionDescription = description;
-    }
-}
-
-class TaskExecutor {
+class Executor {
     constructor(bot) {
         this.bot = bot;
-        this.codeExecutor = new CodeExecutor(bot);
-        this.chat_history = [];
-        this.runtime = new Runtime();
+        // 初始化基础依赖
+        this.initializeDependencies();
     }
 
-    getRuntime() {
-        return this.runtime;
+    // 初始化基础依赖
+    initializeDependencies() {
+        // 初始化 mcData
+        const mcDataInstance = mcData(this.bot.version);
+        
+        this.dependencies = {
+            require,
+            console,
+            setTimeout,
+            setInterval,
+            clearTimeout,
+            clearInterval,
+            Promise,
+            // Minecraft 相关依赖
+            Vec3,
+            GoalNear,
+            GoalFollow,
+            GoalXZ,
+            GoalGetToBlock,
+            GoalLookAtBlock,
+            mcData: mcDataInstance, 
+            logger: logger,
+            bot: this.bot,
+            sleep: (ms) => new Promise(resolve => setTimeout(resolve, ms))
+        };
     }
 
-    reset() {
-        this.chat_history = [];
-        this.runtime.reset();
+    // 添加额外的依赖
+    addDependency(name, value) {
+        this.dependencies[name] = value;
+        return this;
     }
 
-    async run(task, environment, inventory, bot_position) {
+    // 添加多个依赖
+    addDependencies(dependencies) {
+        Object.assign(this.dependencies, dependencies);
+        return this;
+    }
+
+    // 准备执行环境
+    prepareContext() {
         try {
-            // 生成代码
-            const code = await this.generateCode(task, environment, inventory, bot_position);
-            if (!code) {
-                logger.error('代码生成失败');
-                return false;
-            }
-            logger.info("==== 生成的代码: ====\n" + code);
-
-
-
-            // 提取主函数名
-            const functionName = this.extractMainFunctionName(code);
-            if (!functionName) {
-                logger.error('无法找到主函数名');
-                return false;
-            }
-            logger.clearReport();
-            this.runtime.setLastFunctionName(functionName);
-            await this.codeExecutor.execute(code, functionName);
-
-            this.runtime.setLastCode(code);
-            this.runtime.setLastReport(logger.getLastReport());
-
-            return true;
+            return vm.createContext(this.dependencies);
         } catch (error) {
-            logger.error('任务执行失败:', error);
-            this.runtime.setLastError(error.message);
-            return false;
+            console.error('创建执行上下文失败:', error);
+            throw error;
         }
     }
 
-    async generateCode(task, environment, inventory, bot_position) {
-        this.chat_history.push(task);
-        let prompt = fs.readFileSync('prompts/action.txt', 'utf8');
-        const code = fs.readFileSync('sample_codes/base.js', 'utf8');
-
-        // 替换提示词中的占位符
-        prompt = prompt.replace('{{code}}', code);
-        prompt = prompt.replace('{{bot_inventory}}', inventory);
-        prompt = prompt.replace('{{environment}}', environment);
-        prompt = prompt.replace('{{bot_position}}', bot_position);
-        prompt = prompt.replace('{{chat_history}}', this.getChatHistory());
-        prompt = prompt.replace('{{last_code}}', this.runtime.getLastCode() || '暂时没有上次代码');
-        
-        const messages = [
-            { role: "system", content: "你是Minecraft控制代码生成器" },
-            { role: "user", content: prompt }
-        ];
-
-        const response = await llm.call(messages, 0.0);
-        
-        // 提取并保存解释文本
-        const explanation = this.extractExplanationFromResponse(response);
-        if (explanation) {
-            this.bot.chat(explanation);
-            this.chat_history.push(explanation);
-        }
-
-        // 提取主函数功能说明
-        const functionDescription = this.extractMainFunctionDescription(response);
-        if (!functionDescription) {
-            logger.error('无法找到主函数功能说明');
-            return null;
-        }
-        this.runtime.setLastFunctionDescription(functionDescription);
-        return this.extractCodeFromResponse(response);
+    // 构造可执行代码
+    prepareExecutableCode(code, functionName) {
+        return `
+            ${code}
+            
+            // 包装异步执行
+            (async () => {
+                try {
+                    await ${functionName}(bot);
+                } catch (error) {
+                    console.error('函数执行错误:', error);
+                    throw error;
+                }
+            })();
+        `;
     }
 
-    getChatHistory() {
-        let formattedHistory = '';
-        for (let i = 0; i < this.chat_history.length; i += 2) {
-            formattedHistory += `玩家说: ${this.chat_history[i]}\n`;
-            if (i + 1 < this.chat_history.length) {
-                formattedHistory += `bot说: ${this.chat_history[i + 1]}\n`;
+    // 执行代码
+    async execute(code, functionName) {
+        const executableCode = this.prepareExecutableCode(code, functionName);
+        try {
+            const context = this.prepareContext();
+            const result = await vm.runInContext(executableCode, context, {
+                timeout: 30000, // 30秒超时
+                filename: 'dynamic-code.js'
+            });
+            return result;
+        } catch (error) {
+            if (error.code === 'ERR_SCRIPT_EXECUTION_TIMEOUT') {
+                console.error('代码执行超时');
+                throw new Error('代码执行超时');
             }
+            console.error('代码执行错误:', error);
+            throw error;
         }
-        return formattedHistory;
     }
 
-    
-    extractMainFunctionName(code) {
-        // 匹配所有的函数声明
-        const matches = Array.from(code.matchAll(/(?:async\s+)?function\s+(\w+)/g));
-        
-        // 如果有匹配项，返回最后一个函数名
-        if (matches.length > 0) {
-            return matches[matches.length - 1][1];
-        }
-        
-        return null;
-    }
-
-    
-
-    extractExplanationFromResponse(response) {
-        const match = response.match(/解释:([\s\S]*?)(?:计划:|代码:)/);
-        return match ? match[1].trim() : '';
-    }
-
-    extractMainFunctionDescription(response) {
-        logger.error('response: ' + response);
-        // 修改正则表达式以匹配 ```desc 和下一个 ``` 之间的内容
-        const match = response.match(/```desc\n([\s\S]*?)```/);
-        return match ? match[1].trim() : null;
-    }
-
-    extractCodeFromResponse(response) {
-        const match = response.match(/```js\n([\s\S]*?)```/);
-        return match ? match[1].trim() : null;
+    // 清理资源
+    cleanup() {
+        // 清理定时器等资源
+        Object.keys(this.dependencies).forEach(key => {
+            if (this.dependencies[key] && typeof this.dependencies[key].destroy === 'function') {
+                this.dependencies[key].destroy();
+            }
+        });
     }
 }
 
-module.exports = TaskExecutor; 
+module.exports = Executor; 

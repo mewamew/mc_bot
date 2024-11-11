@@ -41,4 +41,3 @@ class Reflector {
 }
 
 module.exports = Reflector;
-

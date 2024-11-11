@@ -1,17 +1,21 @@
 const logger = require('./logger');
-const TaskPlanner = require('./agents/task_planner');
-const TaskExecutor = require('./agents/executor');
+const TaskPlanner = require('./agents/planner');
+const Coder = require('./agents/coder');
 const Reflector = require('./agents/reflector');
+const Executor = require('./agents/executor');
 const Vec3 = require('vec3');
 const SkillManager = require('./skills/skill_manager');
+const fs = require('fs').promises;
+const path = require('path');
+
 class McBot {
     constructor(bot) {
         this.bot = bot;
-
         this.taskPlanner = new TaskPlanner();
-        this.taskExecutor = new TaskExecutor(bot);
         this.reflector = new Reflector();
         this.skillManager = new SkillManager();
+        this.coder = new Coder(bot);
+        this.executor = new Executor();
     }
 
     async init() {
@@ -221,58 +225,17 @@ class McBot {
             return;
         }
 
-        if (message == "s") {
-            await this.skillManager.saveSkill("收集10个木头", 'collect_wood');
-            await this.skillManager.saveSkill("收集5个木头", 'collect_wood');
-            return;
-        }
-
-        if (message.startsWith("g")) {
-            const skill = await this.skillManager.getSkill(message.substring(1));
-            logger.info(skill.score);
-            logger.info(skill.description);
-            logger.info(skill.metadata.functionName);
-
-            return;
-        }
-
-        const maxRetries = 3;   
-        let retries = 0;
-
-        const result = await this.taskExecutor.run(message, this.getEnvironment(), this.getInventories(), this.getBotPosition());
+        const result = await this.coder.gen(message, this.getEnvironment(), this.getInventories(), this.getBotPosition());
         if (!result) {
-            logger.error('失败了，应该是解析返回有问题!');
-            return;
+            this.bot.chat(this.coder.explanation);
+            logger.info(this.coder.code);
+            return; 
         }
-        while (retries < maxRetries) {
-            const result = await this.reflector.validate(
-                message.substring(1), 
-                this.getEnvironment(), 
-                this.getInventories(), 
-                this.getBotPosition(),
-                this.taskExecutor.getRuntime().getLastCode(),
-                this.taskExecutor.getRuntime().getLastReport(),
-                this.taskExecutor.getRuntime().getLastError()
-            );
-            
-            this.bot.chat(result.success ? '任务完成' : '任务失败');
-            this.bot.chat(result.reason);
 
-            if (result.success) {
-                // 保存技能
-                await this.skillManager.saveSkill(this.taskExecutor.getRuntime().getLastFunctionDescription(), this.taskExecutor.getRuntime().getLastFunctionName());
-
-                this.taskExecutor.getRuntime().reset();
-                break;
-            } else {
-                retries++;
-                await this.taskExecutor.run(result.reason, this.getEnvironment(), this.getInventories(), this.getBotPosition());
-            }
-        }
-        if (retries >= maxRetries) {
-            logger.error('重试超过最大次数, 任务失败');
-            this.bot.chat('重试超过最大次数, 任务失败');
-        }
+        const code = this.coder.code;
+        const functionName = this.coder.functionName;
+        const functionDescription = this.coder.functionDescription;
+        
     }
 
     
