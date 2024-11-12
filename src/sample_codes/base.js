@@ -40,26 +40,20 @@
  *    - position: Vec3 类型,目标方块位置
  */
 
-
 // 移动到指定位置附近
 await bot.pathfinder.goto(new GoalNear(100, 64, 100, 5));
-
 //  移动到指定的XZ坐标
 await bot.pathfinder.goto(new GoalXZ(200, 200));
-
 // 移动到指定的方块旁边
 await bot.pathfinder.goto(new GoalGetToBlock(150, 64, 150));
-
 // 跟随指定的实体
 const entity = bot.nearestEntity();
 if (entity) {
   await bot.pathfinder.goto(new GoalFollow(entity, 2));
 }
-
 // 移动到指定位置以放置方块
 const position = new Vec3(120, 64, 120);
 await bot.pathfinder.goto(new GoalPlaceBlock(position, bot.world, {}));
-
 //  移动到指定位置以观察方块
 const lookAtPosition = new Vec3(130, 64, 130);
 await bot.pathfinder.goto(new GoalLookAtBlock(lookAtPosition, bot.world, {}));
@@ -70,7 +64,6 @@ if (player) {
   const playerPos = player.position;
   console.log(`玩家位置: x=${playerPos.x}, y=${playerPos.y}, z=${playerPos.z}`);
 }
-
 // 获取背包中指定物品的数量示例
 /**
  * 获取背包中指定物品的数量
@@ -80,10 +73,8 @@ if (player) {
 function getItemCount(itemName) {
   // 获取所有匹配的物品
   const items = bot.inventory.items().filter(item => item.name === itemName);
-  
   // 如果没有找到物品，返回0
   if (!items.length) return 0;
-  
   // 计算总数量（将所有匹配物品的数量相加）
   return items.reduce((count, item) => count + item.count, 0);
 }

@@ -4,6 +4,7 @@ const llm = require('../utils/llm');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
+const { log } = require('console');
 
 class SkillManager {
     constructor() {
@@ -25,7 +26,6 @@ class SkillManager {
         
         const filePath = path.join(skillDir, `${skillId}.js`);
         await fs.promises.writeFile(filePath, code);
-        
         const embedding = await llm.getEmbedding(description);
         if (!embedding) {
             logger.error(`Embedding API调用失败: ${description}`);
@@ -52,7 +52,7 @@ class SkillManager {
 
         const result = await this.vectorDB.search(embedding, {
             limit: 1,
-            minScore: 0.75
+            minScore: 0.85
         });
         if (result.length ==0 ) {
             logger.warn(`没有找到匹配的技能: ${description}`);

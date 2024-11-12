@@ -1,6 +1,6 @@
 const axios = require('axios');
 const logger = require('./logger');
-const { API_KEY, API_URL, MODEL, EMBEDDING_API_URL } = require('./config');
+const { API_KEY, API_URL, MODEL, EMBEDDING_API_URL, LLM_DEBUG } = require('./config');
 
 class LLM {
   constructor() {
@@ -16,13 +16,11 @@ class LLM {
     
     while (retries <= maxRetries) {
       try {
-        const cleanMessages = messages.map(msg => ({
-          ...msg,
-          content: msg.content.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
-        }));
-        
-        logger.info("===== LLM调用参数 ==== ");
-        logger.pure('CYAN', JSON.stringify(cleanMessages, null, 2).replace(/\\n/g, '\n'));
+
+        if (LLM_DEBUG != "false") {
+          logger.info("===== LLM输入 ==== ");
+          logger.pure('CYAN', messages[0].content);
+        }
 
         const response = await axios.post(this.API_URL, {
           model: this.MODEL,
@@ -37,8 +35,10 @@ class LLM {
           timeout: 30000, // 设置30秒超时
         });
 
-        logger.info("===== LLM调用返回 ==== ");
-        logger.pure('CYAN', response.data.choices[0].message.content.trim());
+        if (LLM_DEBUG  != "false") {
+          logger.info("===== LLM调用返回 ==== ");
+          logger.pure('YELLOW', response.data.choices[0].message.content.trim());
+        }
         return response.data.choices[0].message.content.trim();
 
       } catch (error) {
@@ -82,7 +82,6 @@ class LLM {
         );
 
         const embedding = response.data.data[0].embedding;
-        logger.info(`向量维度: ${embedding.length}`);
         return embedding;
 
       } catch (error) {

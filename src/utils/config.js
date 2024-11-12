@@ -8,4 +8,5 @@ module.exports = {
     API_URL: process.env.LLM_API_URL,
     EMBEDDING_API_URL: process.env.EMBEDDING_API_URL,
     MODEL: process.env.LLM_MODEL,
+    LLM_DEBUG: process.env.LLM_DEBUG,
 };

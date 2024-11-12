@@ -4,6 +4,8 @@ rem 设置环境变量
 del /f /q logs\*.js
 rem del /f /q codes\*.js
 
+set LLM_DEBUG=false
+
 rem 302
 set LLM_API_KEY=sk-w0k5k6dsB9EEn2Oxk2pVSO5nBaIxvuNeSSMKcFIZ0Qv3ZEDA
 set LLM_API_URL=https://api.302.ai/v1/chat/completions

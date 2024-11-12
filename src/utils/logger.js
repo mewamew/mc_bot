@@ -47,7 +47,8 @@ class Logger {
             RED: '\x1b[31m', // 红色
             YELLOW: '\x1b[33m',  // 黄色
             GREEN: '\x1b[32m',  // 绿色
-            CYAN: '\x1b[36m'  // 青色
+            CYAN: '\x1b[36m',  // 青色
+            BLUE: '\x1b[34m'  // 蓝色
         };
         const resetColor = '\x1b[0m'; // 重置颜色
         console.log(`${colors[color]}${message}${resetColor}`);
