@@ -1,6 +1,5 @@
 const vm = require('vm');
 const { GoalNear, GoalFollow, GoalXZ, GoalGetToBlock, GoalLookAtBlock } = require('mineflayer-pathfinder').goals;
-const mcData = require('minecraft-data');
 const Vec3 = require('vec3').Vec3;
 const logger = require('../utils/logger');
 
@@ -24,7 +23,7 @@ class Executor {
     // 初始化基础依赖
     initializeDependencies() {
         // 初始化 mcData
-        const mcDataInstance = mcData(this.bot.version);
+        const mcData = require('minecraft-data')(this.bot.version);
         
         this.dependencies = {
             require,
@@ -41,8 +40,7 @@ class Executor {
             GoalXZ,
             GoalGetToBlock,
             GoalLookAtBlock,
-            mcData: mcDataInstance, 
-            logger: logger,
+            logger,
             bot: this.bot,
             sleep: (ms) => new Promise(resolve => setTimeout(resolve, ms))
         };
@@ -75,6 +73,7 @@ class Executor {
         return `
             ${code}
             // 包装异步执行
+            const mcData = require('minecraft-data')(bot.version);
             (async () => {
                 await ${functionName}(bot);
             })();

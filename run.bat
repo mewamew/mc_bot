@@ -4,7 +4,7 @@ rem 设置环境变量
 del /f /q logs\*.js
 rem del /f /q codes\*.js
 
-set LLM_DEBUG=false
+set LLM_DEBUG=true
 
 rem 302
 set LLM_API_KEY=sk-w0k5k6dsB9EEn2Oxk2pVSO5nBaIxvuNeSSMKcFIZ0Qv3ZEDA

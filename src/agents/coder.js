@@ -49,9 +49,16 @@ class Coder {
         return formattedHistory;
     }
 
+    loadSampleCode() {
+        const base = fs.readFileSync(`src/sample_codes/base.js`, 'utf8');
+        const move = fs.readFileSync(`src/sample_codes/move.js`, 'utf8');
+        const craft = fs.readFileSync(`src/sample_codes/craft.js`, 'utf8');
+        return base+move+craft;
+    }
+
     async gen(message, environment, inventory, bot_position) {
         this._chatHistory.push(message);
-        const sampleCode = fs.readFileSync('src/sample_codes/base.js', 'utf8');
+        const sampleCode = this.loadSampleCode();
         const chatHistory = this.formatChatHistory();
         let prompt = fs.readFileSync('src/prompts/action.txt', 'utf8');
 
@@ -62,12 +69,11 @@ class Coder {
         prompt = prompt.replace('{{bot_position}}', bot_position);
         prompt = prompt.replace('{{chat_history}}', chatHistory);
         prompt = prompt.replace('{{last_code}}', this._code || '暂时没有上次代码');
-        
+
         const messages = [
-            { role: "system", content: "你是Minecraft控制代码生成器" },
             { role: "user", content: prompt }
         ];
-
+        
         const response = await llm.call(messages, 0.0);
         if (!response) {
             //TODO what to do?
