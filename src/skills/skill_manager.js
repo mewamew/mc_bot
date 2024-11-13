@@ -15,7 +15,7 @@ class SkillManager {
         await this.vectorDB.init();
     }
 
-    async saveSkill(description, functionName, code) {
+    async saveSkill(task, description, functionName, code) {
         const skillId = uuidv4();
 
         // 保存代码到文件
@@ -26,7 +26,7 @@ class SkillManager {
         
         const filePath = path.join(skillDir, `${skillId}.js`);
         await fs.promises.writeFile(filePath, code);
-        const embedding = await llm.getEmbedding(description);
+        const embedding = await llm.getEmbedding(task);
         if (!embedding) {
             logger.error(`Embedding API调用失败: ${description}`);
             return false;
@@ -35,6 +35,7 @@ class SkillManager {
             id: skillId,
             vector: embedding,
             metadata: {
+                task,
                 description,
                 functionName
             }

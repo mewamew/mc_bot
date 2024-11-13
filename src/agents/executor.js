@@ -10,7 +10,7 @@ class Executor {
     }
 
     get lastError() {
-        return this._lastError;
+        return this._lastError || '没有错误';
     }
 
     init(){

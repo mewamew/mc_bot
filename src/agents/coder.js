@@ -61,9 +61,10 @@ class Coder {
         this._chatHistory.push(message);
         const sampleCode = this.loadSampleCode();
         const chatHistory = this.formatChatHistory();
-        let prompt = fs.readFileSync('src/prompts/action.txt', 'utf8');
+        let prompt = fs.readFileSync('src/prompts/coder.txt', 'utf8');
 
         // 替换提示词中的占位符
+        prompt = prompt.replace('{{task}}', this._chatHistory[0]);
         prompt = prompt.replace('{{code}}', sampleCode);
         prompt = prompt.replace('{{bot_inventory}}', inventory);
         prompt = prompt.replace('{{environment}}', environment);
@@ -122,29 +123,25 @@ class Coder {
 
     
     extractMainFunctionName(code) {
-        // 匹配所有的函数声明
-        const matches = Array.from(code.matchAll(/(?:async\s+)?function\s+(\w+)/g));
-        
-        // 如果有匹配项，返回最后一个函数名
-        if (matches.length > 0) {
-            return matches[matches.length - 1][1];
-        }
-    
-        return null;
+        // 匹配函数声明
+        const match = code.match(/(?:async\s+)?function\s+(\w+)\s*\(\s*bot\s*\)/);
+        return match ? match[1] : null;
     }
 
     extractExplanationFromResponse(response) {
-        const match = response.match(/解释:([\s\S]*?)(?:计划:|代码:)/);
-        return match ? match[1].trim() : '';
+        // 提取任务分析部分
+        const match = response.match(/任务分析:[\s\S]*?(?=执行计划:)/);
+        return match ? match[0].trim() : '';
     }
 
     extractMainFunctionDescription(response) {
-        // 修改正则表达式以匹配 ```desc 和下一个 ``` 之间的内容
+        // 匹配函数说明部分的desc代码块
         const match = response.match(/```desc\n([\s\S]*?)```/);
         return match ? match[1].trim() : null;
     }
 
     extractCodeFromResponse(response) {
+        // 匹配代码实现部分的js代码块
         const match = response.match(/```js\n([\s\S]*?)```/);
         return match ? match[1].trim() : null;
     }

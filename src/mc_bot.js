@@ -284,7 +284,7 @@ class McBot {
                     logger.info("=== 任务完成 ===");
                     if (generated) {
                         // 更新技能库
-                        await this.skillManager.saveSkill(this.coder.functionDescription, this.coder.functionName, this.coder.code);
+                        await this.skillManager.saveSkill(message,this.coder.functionDescription, this.coder.functionName, this.coder.code);
                     }
                     this.coder.reset();
                     this.executor.reset();
