@@ -1,7 +1,7 @@
 @echo off
 rem 设置环境变量
 
-del /f /q logs\*.js
+rem del /f /q logs\*.log
 rem del /f /q codes\*.js
 
 set LLM_DEBUG=true

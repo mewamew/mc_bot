@@ -33,8 +33,11 @@ bot.on('chat', async (username, message) => {
   }
 })
 
+bot.on('spawn', () => {
+  logger.pure('YELLOW', '=== 机器人已经重生 ===');
+  mc_bot.init();
+})
 
-mc_bot.init();
 
 bot.on('kicked', console.log)
 bot.on('error', console.log)

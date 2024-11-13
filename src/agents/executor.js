@@ -7,24 +7,26 @@ const logger = require('../utils/logger');
 class Executor {
     constructor(bot) {
         this.bot = bot;
-        // 初始化基础依赖
-        this.initializeDependencies();
-        this._lastError = '';
     }
 
     get lastError() {
         return this._lastError;
     }
 
+    init(){
+        this.initializeDependencies();
+        this._lastError = '';
+    }
     reset() {
         this._lastError = '';
     }
 
     // 初始化基础依赖
     initializeDependencies() {
-        // 初始化 mcData
         const mcData = require('minecraft-data')(this.bot.version);
-        
+        if(!mcData){
+            throw new Error('mcData 初始化失败');
+        }
         this.dependencies = {
             require,
             console,
@@ -40,6 +42,7 @@ class Executor {
             GoalXZ,
             GoalGetToBlock,
             GoalLookAtBlock,
+            mcData,
             logger,
             bot: this.bot,
             sleep: (ms) => new Promise(resolve => setTimeout(resolve, ms))
@@ -72,8 +75,6 @@ class Executor {
     prepareExecutableCode(code, functionName) {
         return `
             ${code}
-            // 包装异步执行
-            const mcData = require('minecraft-data')(bot.version);
             (async () => {
                 await ${functionName}(bot);
             })();
@@ -85,9 +86,10 @@ class Executor {
         const executableCode = this.prepareExecutableCode(code, functionName);
         try {
             this._lastError = '';
+            const script = new vm.Script(executableCode);
             const context = this.prepareContext();
-            const result = await vm.runInContext(executableCode, context, {
-                timeout: 30000, // 30秒超时
+            const result = await script.runInNewContext(this.dependencies, {
+                timeout: 30000,
                 filename: 'dynamic-code.js'
             });
             return result;

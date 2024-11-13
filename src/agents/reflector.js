@@ -25,6 +25,11 @@ class Reflector {
         let attempts = 3;
         while (attempts > 0) {
             const response = await llm.call(messages);
+            if (response == null) {
+                logger.error('LLM返回为空，剩余重试次数: ' + attempts);
+                attempts--;
+                continue;
+            }
             const json_result = json.extract(response);
             
             if (json_result) {

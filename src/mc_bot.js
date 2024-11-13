@@ -21,6 +21,7 @@ class McBot {
 
     async init() {
         await this.skillManager.init();
+        this.executor.init();
     }
 
     getInventories() {
@@ -217,8 +218,8 @@ class McBot {
     }
 
     async handleMessage(message) {
-        logger.info("===== 收到消息 ==== ");
-        logger.pure('BLUE', "***** " + message + " *****");
+        logger.info("===== 收到任务 ==== ");
+        logger.pure('YELLOW', " ***** " + message + " *****");
 
         if (message == "e") {
             const env = this.getEnvironment();
@@ -250,8 +251,8 @@ class McBot {
             code = this.coder.code;
             functionName = this.coder.functionName;
             generated = true;
-            logger.info("=== 生成技能代码 ===");
-            logger.pure('YELLOW', code);
+            //logger.info("=== 生成技能代码 ===");
+            //logger.pure('YELLOW', code);
 
         }
 
@@ -316,8 +317,8 @@ class McBot {
                     code = this.coder.code;
                     generated = true;
                     functionName = this.coder.functionName;
-                    logger.info("=== 生成技能代码 ===");
-                    logger.pure('YELLOW', code);
+                    //logger.info("=== 生成技能代码 ===");
+                    //logger.pure('YELLOW', code);
                 }
             }
         }

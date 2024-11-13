@@ -53,7 +53,8 @@ class Coder {
         const base = fs.readFileSync(`src/sample_codes/base.js`, 'utf8');
         const move = fs.readFileSync(`src/sample_codes/move.js`, 'utf8');
         const craft = fs.readFileSync(`src/sample_codes/craft.js`, 'utf8');
-        return base+move+craft;
+        const place = fs.readFileSync(`src/sample_codes/place.js`, 'utf8');
+        return base+move+craft+place;
     }
 
     async gen(message, environment, inventory, bot_position) {
