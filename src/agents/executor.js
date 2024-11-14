@@ -2,11 +2,19 @@ const vm = require('vm');
 const { GoalNear, GoalFollow, GoalXZ, GoalGetToBlock, GoalLookAtBlock } = require('mineflayer-pathfinder').goals;
 const Vec3 = require('vec3').Vec3;
 const logger = require('../utils/logger');
-
+const { 
+    mineBlock, 
+    getItemCount,
+    craftItemWithoutCraftingTable,
+    craftItemWithCraftingTable,
+    moveTo
+} = require('../skills/utils');
 
 class Executor {
     constructor(bot) {
         this.bot = bot;
+        this._currentTask = null;
+        this._currentContext = null;
     }
 
     get lastError() {
@@ -28,6 +36,7 @@ class Executor {
             throw new Error('mcData 初始化失败');
         }
         this.dependencies = {
+            bot: this.bot,
             require,
             console,
             setTimeout,
@@ -35,7 +44,7 @@ class Executor {
             clearTimeout,
             clearInterval,
             Promise,
-            // Minecraft 相关依赖
+            // Mineflayer 相关依赖
             Vec3,
             GoalNear,
             GoalFollow,
@@ -43,22 +52,14 @@ class Executor {
             GoalGetToBlock,
             GoalLookAtBlock,
             mcData,
-            logger,
-            bot: this.bot,
-            sleep: (ms) => new Promise(resolve => setTimeout(resolve, ms))
+            // 工具函数
+            mineBlock,
+            getItemCount,
+            craftItemWithoutCraftingTable,
+            craftItemWithCraftingTable,
+            moveTo,
+            logger
         };
-    }
-
-    // 添加额外的依赖
-    addDependency(name, value) {
-        this.dependencies[name] = value;
-        return this;
-    }
-
-    // 添加多个依赖
-    addDependencies(dependencies) {
-        Object.assign(this.dependencies, dependencies);
-        return this;
     }
 
     // 准备执行环境
@@ -83,20 +84,62 @@ class Executor {
 
     // 执行代码
     async run(code, functionName) {
+        // 清理之前的上下文
+        if (this._currentContext) {
+            this.cleanup();
+        }
+
         const executableCode = this.prepareExecutableCode(code, functionName);
         try {
             this._lastError = '';
             const script = new vm.Script(executableCode);
-            const context = this.prepareContext();
-            const result = await script.runInNewContext(this.dependencies, {
-                timeout: 30000,
-                filename: 'dynamic-code.js'
+            
+            //logger.info("=== 执行代码 ===");
+            //logger.pure('YELLOW', executableCode);  
+            // 创建新的上下文
+            this._currentContext = this.prepareContext();
+            
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                    this.cleanup();
+                    reject(new Error('任务执行超时'));
+                }, 30000);
             });
-            return result;
+            
+            this._currentTask = Promise.race([
+                script.runInContext(this._currentContext, {
+                    timeout: 30000,
+                    filename: 'dynamic-code.js'
+                }),
+                timeoutPromise
+            ]);
+
+            await this._currentTask;
+            this.cleanup();
         } catch (error) {
+            this.cleanup();
             this._lastError = error.message;
-            console.error('代码执行错误:', error);
+            logger.error('代码执行错误');
+            logger.pure('RED', error);
         }
+    }
+
+    cleanup() {
+        // 停止当前任务
+        this.stopCurrentTask();
+        
+        // 释放 VM 上下文
+        if (this._currentContext) {
+            this._currentContext = null;
+        }
+    }
+
+    stopCurrentTask() {
+        if (this.bot.pathfinder) {
+            this.bot.pathfinder.stop();
+        }
+        this.bot.clearControlStates();
+        this._currentTask = null;
     }
 }
 

@@ -89,6 +89,7 @@ class Logger {
         }
         this.reportMessage += message;
         bot.chat(message);
+        this.info(message);
     }
 
     getLastReport() {

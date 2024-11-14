@@ -1,6 +1,11 @@
 const mineflayer = require('mineflayer')
 const { pathfinder } = require('mineflayer-pathfinder')
 const logger = require('./utils/logger')
+const { 
+    craftItemWithCraftingTable,
+    craftItemWithoutCraftingTable
+ } = require('./skills/utils');
+
 const bot = mineflayer.createBot({
   host: 'localhost', // minecraft 服务器的 IP 地址
   username: 'huahua', // minecraft 用户名
@@ -11,71 +16,41 @@ bot.loadPlugin(pathfinder)
 bot.loadPlugin(require('mineflayer-collectblock').plugin)
 
 
-
-async function craftCraftingTable() {
+async function mineBlock(bot, blockType, count) {
     const mcData = require('minecraft-data')(bot.version);
-    const craftingTableId = mcData.itemsByName['crafting_table'].id;
-    const recipes = bot.recipesFor(craftingTableId, null, 1, null);
-    if (!recipes || recipes.length === 0) {
-        logger.error('找不到工作台的配方');
-        return;
+    const blockID = mcData.blocksByName[blockType]?.id
+    if (!blockID) {
+        logger.report('方块类型错误:' + blockType, bot);
+        return
     }
 
-    try {
-        await bot.craft(recipes[0], 1)
-        bot.chat('喵~工作台制作完成了！')
-    } catch (err) {
-        bot.chat('呜...制作失败了，可能是材料不够呢...')
-        logger.error('制作工作台失败:', err)
-    }
-}
+    // 初始化计数器
+    let minedCount = 0
+    logger.report('开始挖掘 ' + count + ' 个 ' + blockType, bot);
+    while (minedCount < count) {
+        // 寻找最近的目标方块
+        const block = bot.findBlock({
+            matching: blockID,
+            maxDistance: 32
+        })
 
-async function placeCraftingTable() {
-    const Vec3 = require('vec3');
-    const craftingTableItem = bot.inventory.findInventoryItem('crafting_table');
-    
-    if (!craftingTableItem) {
-        bot.chat('呜...背包里没有找到工作台呢...');
-        return;
-    }
+        if (!block) {
+            logger.report('附近找不到 ' + blockType, bot);
+            break
+        }
 
-    // 先将工作台拿到主手
-    try {
-        await bot.equip(craftingTableItem, 'hand');
-        bot.chat('喵~已经把工作台拿在手里啦！');
-    } catch (err) {
-        bot.chat('呜...拿取工作台失败了...');
-        logger.error('装备工作台失败:', err);
-        return;
+        try {
+            // 使用 collectBlock 插件进行挖掘
+            await bot.collectBlock.collect(block)
+            minedCount++
+            logger.report('已经挖了 ' + minedCount + ' 个 ' + blockType, bot);
+        } catch (err) {
+            logger.report('挖掘失败:' + err.message, bot);
+            break
+        }
     }
 
-    // 先低头看向地面
-    await bot.look(bot.entity.yaw, -Math.PI/4);
-    
-    // 获取机器人视线所指的方块
-    const targetBlock = bot.blockAtCursor(3);
-
-    if (!targetBlock) {
-        bot.chat('呜...找不到可以放置的地方呢...');
-        return;
-    }
-
-    // 添加放置前的检查
-    const faceVector = new Vec3(0, 1, 0);
-    const placementPosition = targetBlock.position.plus(faceVector);
-    
-
-
-    logger.info("目标方块位置：" + targetBlock.position.toString());
-    logger.info("目标方块类型：" + targetBlock.name);
-    
-    try {
-        await bot.placeBlock(targetBlock, faceVector);
-        bot.chat('喵~工作台放好啦！');
-    } catch (err) {
-        bot.chat('呜...放置失败了，可能是这个位置不能放置呢...');
-        logger.error(err);
-    }
+    logger.report('任务完成啦！一共挖到了 ' + minedCount + ' 个 ' + blockType, bot);
 }
 
 bot.on('chat', async (username, message) => {
@@ -83,15 +58,19 @@ bot.on('chat', async (username, message) => {
     return
   }
 
-  if (message === 'c') {
-    await craftCraftingTable()
+  if (message === 'm') {
+    await mineBlock(bot, 'oak_log', 4);
     return
   }
 
-  if (message === 'p') {
-    await placeCraftingTable()
+  if (message === 'c') {
+    await craftItemWithCraftingTable(bot, logger, 'oak_planks', 4);
+    logger.info('使用工作台合成完成');
+    await craftItemWithoutCraftingTable(bot, logger, 'oak_planks', 4);
+    logger.info('不使用工作台合成完成');
     return
   }
+
 
   bot.chat(message);
 })

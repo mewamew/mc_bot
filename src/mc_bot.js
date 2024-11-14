@@ -1,19 +1,17 @@
-const logger = require('./utils/logger');
-const TaskPlanner = require('./agents/planner');
+const Planner = require('./agents/planner');
 const Coder = require('./agents/coder');
 const Reflector = require('./agents/reflector');
 const Executor = require('./agents/executor');
-const Vec3 = require('vec3');
 const SkillManager = require('./skills/skill_manager');
-const fs = require('fs').promises;
-const path = require('path');
-const { log } = require('console');
+const logger = require('./utils/logger');
+const Vec3 = require('vec3');
+
 
 class McBot {
     constructor(bot) {
         this.bot = bot;
-        this.taskPlanner = new TaskPlanner();
         this.skillManager = new SkillManager();
+        this.planner = new Planner();
         this.coder = new Coder(bot);
         this.executor = new Executor(bot);
         this.reflector = new Reflector();
@@ -67,6 +65,10 @@ class McBot {
         // 记录每个y层的方块分布
         let layerDistribution = {};
         
+        // 初始化工作台距离追踪
+        let nearestCraftingTable = null;
+        let minCraftingTableDist = Infinity;
+        
         // 扫描周围区域的地形
         for (let x = -scanRadius; x <= scanRadius; x++) {
             for (let z = -scanRadius; z <= scanRadius; z++) {
@@ -80,6 +82,15 @@ class McBot {
                     const block = this.bot.blockAt(pos);
                     
                     if (!block || block.name === 'air') continue;
+
+                    // 检查是否是工作台并更新最近距离
+                    if (block.name === 'crafting_table') {
+                        const dist = pos.distanceTo(botPos);
+                        if (dist < minCraftingTableDist) {
+                            minCraftingTableDist = dist;
+                            nearestCraftingTable = pos;
+                        }
+                    }
 
                     // 统计方块总数
                     if (!environment.blocks[block.name]) {
@@ -174,8 +185,13 @@ class McBot {
             return "当前为空";
         }
 
-        // 将environment对象转换为字符串形式
+        // 在结果字符串开头添加工作台信息
         let result = '';
+        if (nearestCraftingTable) {
+            result += `最近的工作台距离: ${minCraftingTableDist.toFixed(2)}格\n\n`;
+        } else {
+            result += "未发现工作台\n\n";
+        }
         
         // 添加地形描述
         if (terrainDescription.length > 0) {
@@ -217,19 +233,7 @@ class McBot {
         return `x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}, z: ${pos.z.toFixed(2)}`;
     }
 
-    async handleMessage(message) {
-        logger.info("===== 收到任务 ==== ");
-        logger.pure('YELLOW', " ***** " + message + " *****");
-
-        if (message == "e") {
-            const env = this.getEnvironment();
-            this.bot.chat(env);
-            this.bot.chat("拥有的物品")
-            const inv = this.getInventories();
-            this.bot.chat(inv);
-            return;
-        }
-
+    async doSingleTask(message) {
         let code = '';
         let functionName = '';
         let generated = false;
@@ -251,8 +255,8 @@ class McBot {
             code = this.coder.code;
             functionName = this.coder.functionName;
             generated = true;
-            //logger.info("=== 生成技能代码 ===");
-            //logger.pure('YELLOW', code);
+            logger.info("=== 生成技能代码 ===");
+            logger.pure('YELLOW', code);
 
         }
 
@@ -263,10 +267,11 @@ class McBot {
         while (attempts < MAX_ATTEMPTS) {
             // 执行代码
             logger.clearReport();
+            logger.info("=== 执行代码 ===");
             await this.executor.run(code, functionName);
-
+            
             // 反思
-            logger.info("=== 反思 ===");
+            logger.info("===执行完毕，开始反思 ===");
             const reflection = await this.reflector.validate(
                 message,
                 this.getEnvironment(),
@@ -277,8 +282,8 @@ class McBot {
                 this.executor.lastError
             );
 
-            logger.pure('YELLOW', reflection.reason);
             if (reflection) {
+                logger.pure('YELLOW', reflection.reason);
                 if (reflection.success) {
                     this.bot.chat('任务完成');
                     logger.info("=== 任务完成 ===");
@@ -317,13 +322,39 @@ class McBot {
                     code = this.coder.code;
                     generated = true;
                     functionName = this.coder.functionName;
-                    //logger.info("=== 生成技能代码 ===");
-                    //logger.pure('YELLOW', code);
+                    logger.info("=== 生成技能代码 ===");
+                    logger.pure('YELLOW', code);
                 }
             }
         }
     }
 
+    async handleMessage(message) {
+        logger.info("===== 收到任务 ==== ");
+        logger.pure('YELLOW', " ***** " + message + " *****");
+
+        if (message == "e") {
+            const env = this.getEnvironment();
+            this.bot.chat(env);
+            this.bot.chat("拥有的物品")
+            const inv = this.getInventories();
+            this.bot.chat(inv);
+            return;
+        }
+
+        logger.info("=== 计划任务 ===");
+        const plan = await this.planner.plan(message, this.getInventories(), this.getEnvironment(), this.getBotPosition());
+        if (!plan) {
+            return;
+        }
+        this.bot.chat(plan.reason);
+        logger.info("分解任务: " + plan.reason);
+        for (const task of plan.sub_tasks) {
+            logger.info("执行任务: " + task);
+            this.bot.chat("执行任务: " + task);
+            await this.doSingleTask(task);
+        }
+    }
 }
 
 module.exports = McBot;

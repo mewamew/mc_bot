@@ -53,7 +53,7 @@ class SkillManager {
 
         const result = await this.vectorDB.search(embedding, {
             limit: 1,
-            minScore: 0.85
+            minScore: 0.9
         });
         if (result.length ==0 ) {
             logger.warn(`没有找到匹配的技能: ${description}`);
