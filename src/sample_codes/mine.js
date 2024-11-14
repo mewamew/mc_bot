@@ -1,2 +1,2 @@
-// 挖掘指定数量的方块，调用工具函数mineBlock
-await mineBlock(bot, logger, 'oak_log', 4);
+// 挖掘指定数量的方块
+await utils.mineBlock('oak_log', 4);

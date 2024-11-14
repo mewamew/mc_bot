@@ -2,13 +2,7 @@ const vm = require('vm');
 const { GoalNear, GoalFollow, GoalXZ, GoalGetToBlock, GoalLookAtBlock } = require('mineflayer-pathfinder').goals;
 const Vec3 = require('vec3').Vec3;
 const logger = require('../utils/logger');
-const { 
-    mineBlock, 
-    getItemCount,
-    craftItemWithoutCraftingTable,
-    craftItemWithCraftingTable,
-    moveTo
-} = require('../skills/utils');
+const Utils = require('../skills/utils');
 
 class Executor {
     constructor(bot) {
@@ -35,6 +29,7 @@ class Executor {
         if(!mcData){
             throw new Error('mcData 初始化失败');
         }
+        const utils = new Utils(this.bot, logger);
         this.dependencies = {
             bot: this.bot,
             require,
@@ -52,12 +47,8 @@ class Executor {
             GoalGetToBlock,
             GoalLookAtBlock,
             mcData,
-            // 工具函数
-            mineBlock,
-            getItemCount,
-            craftItemWithoutCraftingTable,
-            craftItemWithCraftingTable,
-            moveTo,
+            // 工具类
+            utils,
             logger
         };
     }
@@ -135,9 +126,9 @@ class Executor {
     }
 
     stopCurrentTask() {
-        if (this.bot.pathfinder) {
-            this.bot.pathfinder.stop();
-        }
+        //if (this.bot.pathfinder) {
+        //    this.bot.pathfinder.stop();
+        //}
         this.bot.clearControlStates();
         this._currentTask = null;
     }
