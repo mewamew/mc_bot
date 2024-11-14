@@ -69,6 +69,10 @@ class McBot {
         let nearestCraftingTable = null;
         let minCraftingTableDist = Infinity;
         
+        // 初始化最近玩家距离追踪
+        let nearestPlayer = null;
+        let minPlayerDist = Infinity;
+        
         // 扫描周围区域的地形
         for (let x = -scanRadius; x <= scanRadius; x++) {
             for (let z = -scanRadius; z <= scanRadius; z++) {
@@ -162,7 +166,13 @@ class McBot {
         for (const entity of Object.values(nearbyEntities)) {
             if (!entity || entity === this.bot.entity) continue;
 
-            if (entity.type === 'item') {
+            if (entity.type === 'player') {
+                const dist = entity.position.distanceTo(botPos);
+                if (dist < minPlayerDist) {
+                    minPlayerDist = dist;
+                    nearestPlayer = entity;
+                }
+            } else if (entity.type === 'item') {
                 const itemName = entity.metadata[7]?.itemId?.replace('minecraft:', '');
                 if (itemName) {
                     if (!environment.items[itemName]) {
@@ -185,13 +195,20 @@ class McBot {
             return "当前为空";
         }
 
-        // 在结果字符串开头添加工作台信息
+        // 在结果字符串开头添加工作台和玩家信息
         let result = '';
         if (nearestCraftingTable) {
-            result += `最近的工作台距离: ${minCraftingTableDist.toFixed(2)}格\n\n`;
+            result += `最近的工作台距离: ${minCraftingTableDist.toFixed(2)}格\n`;
         } else {
-            result += "未发现工作台\n\n";
+            result += "未发现工作台\n";
         }
+
+        if (nearestPlayer) {
+            result += `最近的玩家 ${nearestPlayer.username} 距离: ${minPlayerDist.toFixed(2)}格\n`;
+        } else {
+            result += "附近没有其他玩家\n";
+        }
+        result += "\n";
         
         // 添加地形描述
         if (terrainDescription.length > 0) {
