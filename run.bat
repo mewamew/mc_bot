@@ -5,17 +5,17 @@ cls
 rem del /f /q logs\*.log
 rem del /f /q codes\*.js
 
-set LLM_DEBUG=false
+set LLM_DEBUG=true
 
 rem 302
-set LLM_API_KEY=sk-w0k5k6dsB9EEn2Oxk2pVSO5nBaIxvuNeSSMKcFIZ0Qv3ZEDA
+set LLM_API_KEY=sk-KjYoBXsO45V70PgrzNNEf1sM34EaZeVPAi3LDdEOl8C5d1WW
 set LLM_API_URL=https://api.302.ai/v1/chat/completions
 set EMBEDDING_API_URL=https://api.302.ai/v1/embeddings
 
-rem set LLM_MODEL=gpt-4o-mini
+set LLM_MODEL=gpt-4o-mini
 rem set LLM_MODEL=o1-mini
 rem set LLM_MODEL=o1-preview
-set LLM_MODEL=claude-3-5-sonnet-20241022
+rem set LLM_MODEL=claude-3-5-sonnet-20241022
 
 rem glm
 rem set LLM_API_KEY=70e8b914a92931f33a35040f2d51bd31.lXmsLAQYvfdcCRe1

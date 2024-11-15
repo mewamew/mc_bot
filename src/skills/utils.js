@@ -118,6 +118,96 @@ class Utils {
         await this.bot.pathfinder.goto(new GoalNear(position.x, position.y, position.z, 1));
         this.logger.report('到达目的地: ' + position.x + ' ' + position.y + ' ' + position.z, this.bot);
     }
+
+    async findPlacePosition() {
+        const { Vec3 } = require('vec3');
+        
+        // 获取机器人当前位置
+        const botPos = this.bot.entity.position;
+        
+        // 搜索附近的实心方块
+        const blocks = this.bot.findBlocks({
+            matching: (block) => block.boundingBox === 'block',
+            maxDistance: 3,
+            count: 256
+        });
+
+        // 按照距离排序
+        blocks.sort((a, b) => {
+            const distA = a.distanceTo(botPos);
+            const distB = b.distanceTo(botPos);
+            return distA - distB;
+        });
+
+        // 遍历找到的方块，检查其上方是否有合适的放置位置
+        for (const blockPos of blocks) {
+            const block = this.bot.blockAt(blockPos);
+            const targetPos = blockPos.offset(0, 1, 0);
+            const targetBlock = this.bot.blockAt(targetPos);
+            
+            // 检查目标位置是否有实体
+            const entities = this.bot.entities;
+            const isEntityAtTarget = Object.values(entities).some(entity => {
+                const entityPos = entity.position;
+                return Math.floor(entityPos.x) === targetPos.x &&
+                       Math.floor(entityPos.y) === targetPos.y &&
+                       Math.floor(entityPos.z) === targetPos.z;
+            });
+
+            // 检查：
+            // 1. 目标位置是空的
+            // 2. 机器人可以看到这个方块
+            // 3. 目标位置没有实体
+            if ((!targetBlock || targetBlock.boundingBox === 'empty') && 
+                this.bot.canSeeBlock(block) &&
+                !isEntityAtTarget) {
+                this.logger.report('找到可放置位置的参考方块: ' + block.position.x + ' ' + block.position.y + ' ' + block.position.z, this.bot);
+                return block;
+            }
+        }
+
+        this.logger.report('找不到合适的放置位置喵！', this.bot);
+        return null;
+    }
+
+    async placeBlock(itemName, count = 1) {
+        const Vec3 = require('vec3');
+        const item = this.bot.inventory.findInventoryItem(itemName);
+        
+        if (!item) {
+            this.logger.report('找不到物品: ' + itemName, this.bot);
+            return;
+        }
+
+        let placedCount = 0;
+        while (placedCount < count) {
+            try {
+                await this.bot.equip(item, 'hand');
+                
+                // 寻找可放置位置
+                const targetBlock = await this.findPlacePosition();
+                if (!targetBlock) {
+                    this.logger.report('找不到可以放置的地方', this.bot);
+                    return;
+                }
+                
+                // 创建一个新的 Vec3 实例来指定放置方向
+                const faceVector = new Vec3(0, 1, 0);
+                this.logger.info(faceVector);
+                this.logger.error(targetBlock);
+                await this.bot.placeBlock(targetBlock, faceVector);
+                placedCount++;
+                
+                this.logger.report('已放置 ' + placedCount + ' 个 ' + itemName, this.bot);
+            } catch (err) {
+                this.logger.report('放置失败: ' + err.message, this.bot);
+                this.logger.error(err);
+                return;
+            }
+        }
+
+        this.logger.report('放置完成！共放置了 ' + placedCount + ' 个 ' + itemName, this.bot);
+    }
 }
 
 module.exports = Utils;

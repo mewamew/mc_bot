@@ -200,7 +200,7 @@ class McBot {
         if (nearestCraftingTable) {
             result += `最近的工作台距离: ${minCraftingTableDist.toFixed(2)}格\n`;
         } else {
-            result += "未发现工作台\n";
+            result += "最近工作台：附近没有工作台\n";
         }
 
         if (nearestPlayer) {
@@ -365,12 +365,18 @@ class McBot {
             return;
         }
         this.bot.chat(plan.reason);
-        logger.info("分解任务: " + plan.reason);
+        logger.pure("YELLOW", "任务分解理由: " + plan.reason);
+        for (const task of plan.sub_tasks) {
+            logger.pure("GREEN", "子任务: " + task);
+        }
+
+        /*
         for (const task of plan.sub_tasks) {
             logger.info("执行任务: " + task);
             this.bot.chat("执行任务: " + task);
             await this.doSingleTask(task);
         }
+        */
     }
 }
 

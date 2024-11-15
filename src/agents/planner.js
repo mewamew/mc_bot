@@ -18,6 +18,10 @@ class Planner {
                 { role: "user", content: prompt}
             ];
             const response = await llm.call(messages);
+            if (!response) {
+                logger.error('LLM调用失败');
+                return null;
+            }
             const json_result = json.extract(response);
             if (!json_result) {
                 logger.error('JSON解析失败');
@@ -28,12 +32,6 @@ class Planner {
         } catch (error) {
             logger.error(error);
             return null;
-        }
-    }
-
-    showMyTasks(tasks, bot) {
-        for (const task of tasks) {
-            bot.chat(task);
         }
     }
 }
