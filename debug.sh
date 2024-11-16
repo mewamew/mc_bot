@@ -9,10 +9,10 @@ export LLM_DEBUG=true
 export LLM_API_KEY="sk-KjYoBXsO45V70PgrzNNEf1sM34EaZeVPAi3LDdEOl8C5d1WW"
 export LLM_API_URL="https://api.302.ai/v1/chat/completions"
 export EMBEDDING_API_URL="https://api.302.ai/v1/embeddings"
-# export LLM_MODEL="gpt-4o-mini"
+export LLM_MODEL="gpt-4o-mini"
 # export LLM_MODEL="o1-mini"
 # export LLM_MODEL="o1-preview"
-export LLM_MODEL="claude-3-5-sonnet-20241022"
+# export LLM_MODEL="claude-3-5-sonnet-20241022"
 
 # glm
 # export LLM_API_KEY="70e8b914a92931f33a35040f2d51bd31.lXmsLAQYvfdcCRe1"
@@ -25,7 +25,7 @@ export LLM_MODEL="claude-3-5-sonnet-20241022"
 # export LLM_MODEL="deepseek-chat"
 
 # 运行程序
-npm start
+node src/debug.js
 
 # 暂停以查看输出（可选）
 read -p "按回车键继续..." 
