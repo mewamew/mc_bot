@@ -85,6 +85,7 @@ class Coder {
         }
         
         // 提取并保存解释文本
+        /*
         const explanation = this.extractExplanationFromResponse(response);
         if (!explanation) {
             //TODO what to do?
@@ -102,6 +103,7 @@ class Coder {
             return false;
         }
         this._functionDescription = functionDescription;
+        */
 
         const functionName = this.extractMainFunctionName(response);
         if (!functionName) {

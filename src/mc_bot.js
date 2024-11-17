@@ -255,8 +255,9 @@ class McBot {
         let functionName = '';
         let generated = false;
 
-        logger.info("尝试从技能库中匹配技能");
-        const skill = await this.skillManager.getSkill(message);
+        //logger.info("尝试从技能库中匹配技能");
+        //const skill = await this.skillManager.getSkill(message);
+        const skill = null;
         if (skill) {
             this.bot.chat(`已找到匹配的技能: ${skill.description}`);
             code = skill.code;
@@ -300,13 +301,14 @@ class McBot {
             );
 
             if (reflection) {
-                logger.pure('YELLOW', reflection.reason);
+                logger.pure('YELLOW', "反思: " + reflection.reason);
                 if (reflection.success) {
                     this.bot.chat('任务完成');
                     logger.info("=== 任务完成 ===");
                     if (generated) {
                         // 更新技能库
-                        await this.skillManager.saveSkill(message,this.coder.functionDescription, this.coder.functionName, this.coder.code);
+                        //
+                        //await this.skillManager.saveSkill(message,this.coder.functionDescription, this.coder.functionName, this.coder.code);
                     }
                     this.coder.reset();
                     this.executor.reset();
@@ -317,7 +319,6 @@ class McBot {
                     if (attempts >= MAX_ATTEMPTS) {
                         logger.warn(`任务失败，已重试${MAX_ATTEMPTS}次`);
                         this.bot.chat(`任务失败，已重试${MAX_ATTEMPTS}次`);
-                        this.bot.chat(reflection.reason);
                         return;
                     }
                     
@@ -339,8 +340,8 @@ class McBot {
                     code = this.coder.code;
                     generated = true;
                     functionName = this.coder.functionName;
-                    logger.info("=== 生成技能代码 ===");
-                    logger.pure('YELLOW', code);
+                    //logger.info("=== 生成技能代码 ===");
+                    //logger.pure('YELLOW', code);
                 }
             }
         }
@@ -349,7 +350,6 @@ class McBot {
     async handleMessage(message) {
         logger.info("===== 收到任务 ==== ");
         logger.pure('YELLOW', " ***** " + message + " *****");
-
         if (message == "e") {
             const env = this.getEnvironment();
             this.bot.chat(env);
@@ -370,13 +370,13 @@ class McBot {
             logger.pure("GREEN", "子任务: " + task);
         }
 
-        /*
+        
         for (const task of plan.sub_tasks) {
             logger.info("执行任务: " + task);
             this.bot.chat("执行任务: " + task);
             await this.doSingleTask(task);
         }
-        */
+        
     }
 }
 

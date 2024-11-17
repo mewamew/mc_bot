@@ -5,19 +5,24 @@ class Utils {
         this.mcData = require('minecraft-data')(bot.version);
     }
 
-    async mineBlock(blockType, count) {
+    async mineBlock(blockType, count, maxDistance = 4) {
         const blockID = this.mcData.blocksByName[blockType]?.id
         if (!blockID) {
             this.logger.report('方块类型错误:' + blockType, this.bot);
             return
         }
 
+        // 确定要统计的物品名称
+        // 煤矿特殊处理：挖掘coal_ore后获得coal
+        const countItemName = blockType === 'coal_ore' ? 'coal' : blockType
+        
         let minedCount = 0
-        this.logger.report('开始挖掘 ' + count + ' 个 ' + blockType, this.bot);
+        this.logger.report('开始挖掘，目标是挖到 ' + count + ' 个 ' + countItemName, this.bot);
+
         while (minedCount < count) {
             const block = this.bot.findBlock({
                 matching: blockID,
-                maxDistance: 32
+                maxDistance: maxDistance
             })
 
             if (!block) {
@@ -26,16 +31,27 @@ class Utils {
             }
 
             try {
+                // 记录收集前的数量
+                const beforeCount = this.getItemCount(countItemName)
                 await this.bot.collectBlock.collect(block)
-                minedCount++
-                this.logger.report('已经挖了 ' + minedCount + ' 个 ' + blockType, this.bot);
+                // 检查收集后的数量
+                const afterCount = this.getItemCount(countItemName)
+                
+                // 计算这次收集新增了多少个
+                const collectedAmount = afterCount - beforeCount
+                if (collectedAmount > 0) {
+                    minedCount += collectedAmount
+                    this.logger.report('新挖到了 ' + collectedAmount + ' 个 ' + countItemName + '，总共已经挖到 ' + minedCount + ' 个', this.bot);
+                } else {
+                    this.logger.report('似乎没有成功收集到 ' + countItemName, this.bot);
+                }
             } catch (err) {
                 this.logger.report('挖掘失败:' + err.message, this.bot);
                 break
             }
         }
 
-        this.logger.report('任务完成啦！一共挖到了 ' + minedCount + ' 个 ' + blockType, this.bot);
+        this.logger.report('挖掘任务完成啦！一共挖到了 ' + minedCount + ' 个 ' + countItemName, this.bot);
     }
 
     getItemCount(itemName) {

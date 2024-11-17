@@ -26,6 +26,11 @@ bot.on('chat', async (username, message) => {
     return
   }
 
+  // 忽略系统指令
+  if(message.startsWith("Teleported")) {
+    return;
+  }
+
   try {
     mc_bot.handleMessage(message);
   } catch (error) {
