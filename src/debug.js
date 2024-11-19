@@ -39,12 +39,21 @@ bot.on('chat', async (username, message) => {
     return;
   }
 
-
+  if (message === 'lp') {
+    const utils = new Utils(bot, logger);
+    try { 
+      await utils.lookAtNearestPlayer();
+    } catch (err) {
+      console.log(err);
+    }
+    return;
+  }
 
   if (message === 'l') {
     const utils = new Utils(bot, logger);
     try { 
       await utils.mineBlock("oak_log", 4, 64);
+      await utils.lookAtNearestPlayer();
     } catch (err) {
       console.log(err);
     }
