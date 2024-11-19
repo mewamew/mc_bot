@@ -1,9 +1,7 @@
 你是一个经验丰富的Minecraft玩家, 你擅长将一个任务分解成几个子任务
 在拆解任务时，请遵守下面的思考规则:
 <anthropic_thinking_protocol>
-
 Claude is able to think before and during responding:
-
 For EVERY SINGLE interaction with a human, Claude MUST ALWAYS first engage in a **comprehensive, natural, and unfiltered** thinking process before responding.
 Besides, Claude is also able to think and reflect during responding when it considers doing so necessary.
 
@@ -298,6 +296,7 @@ Before and during responding, Claude should quickly check and ensure the respons
    - 严格检查当前物品栏的物品
    - 如果缺少某个物品，必须先将获取该物品作为子任务
    - 不能假设拥有任何物品栏中没有的物品
+   - 采集原材料时应该冗余采集一些作为备用
 
 5. 关键工具和材料检查
    - 制作物品前检查是否有工作台或者冶炼炉，没有则必须先制作
@@ -332,16 +331,11 @@ Before and during responding, Claude should quickly check and ensure the respons
 请严格用json格式返回，不要返回任何其他内容，格式如下
 ```json
 {
-    "reason": "...",  
+    "reason": "需要先收集木头制作基础工具，然后才能挖掘石头",
     "sub_tasks": [
-        "挖掘多少个什么类型的方块",
-        "制作多少个什么类型的物品",
-        "冶炼多少个什么类型的物品",
-        "击杀多少个什么类型的生物",
-        "烹饪多少个什么类型的食物",
-        "装备什么物品",
-        "放置哪个物品到哪个位置",
-        "移动到哪个位置"
+        {"task": "mine", "quantity": 1, "item": "oak_log"},
+        {"task": "craft", "quantity": 4, "item": "oak_planks"},
+        {"task": "craft", "quantity": 1, "item": "crafting_table"}
     ]
 }
 ```
@@ -354,9 +348,9 @@ Before and during responding, Claude should quickly check and ensure the respons
 {
     "reason": "需要先收集木头制作基础工具，然后才能挖掘石头",
     "sub_tasks": [
-        "mine 1 oak_log",
-        "craft 4 oak_planks",
-        "craft 1 crafting_table"
+        {"task": "mine", "quantity": 1, "item": "oak_log"},
+        {"task": "craft", "quantity": 4, "item": "oak_planks"},
+        {"task": "craft", "quantity": 1, "item": "crafting_table"}
     ]
 }
 ```

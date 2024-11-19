@@ -367,15 +367,17 @@ class McBot {
         this.bot.chat(plan.reason);
         logger.pure("YELLOW", "任务分解理由: " + plan.reason);
         for (const task of plan.sub_tasks) {
-            logger.pure("GREEN", "子任务: " + task);
+            logger.pure("GREEN", "子任务: " + task.task + " " + task.quantity + " " + task.item);
         }
 
+        /*
         
         for (const task of plan.sub_tasks) {
             logger.info("执行任务: " + task);
             this.bot.chat("执行任务: " + task);
             await this.doSingleTask(task);
         }
+        */
         
     }
 }
