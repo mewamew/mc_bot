@@ -198,7 +198,7 @@ class Utils {
             // 检查：
             // 1. 目标置是空的
             // 2. 机器人可以看到这个方块
-            // 3. 目标位置没��实体
+            // 3. 目标位置没实体
             if ((!targetBlock || targetBlock.boundingBox === 'empty') && 
                 this.bot.canSeeBlock(block) &&
                 !isEntityAtTarget) {
@@ -358,9 +358,22 @@ class Utils {
         while (!isAtSurface() && steps < maxSteps) {
             const pos = this.bot.entity.position
 
-            const targetBlock = pos.offset(0, 1, 1)
-            
-            // 检查头顶上方的两个方块
+            // 寻找前方的实心方块
+            let targetBlock = null
+            for (let i = 1; i <= 3; i++) {
+                const checkBlock = this.bot.blockAt(pos.offset(0, 1, i))
+                if (checkBlock && checkBlock.boundingBox === 'block') {
+                    targetBlock = pos.offset(0, 1, i)
+                    break
+                }
+            }
+
+            // 如果找不到实心方块，就继续向前移动一格
+            if (!targetBlock) {
+                targetBlock = pos.offset(0, 1, 1)
+            }
+
+            // 检查并挖掘通道
             const block1 = this.bot.blockAt(pos.offset(0, 1, 1))
             const block2 = this.bot.blockAt(pos.offset(0, 2, 1))
             const block3 = this.bot.blockAt(pos.offset(0, 2, 0))
