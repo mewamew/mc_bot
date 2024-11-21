@@ -41,7 +41,7 @@ class World {
         return this.getNearestBlock('furnace', maxDistance);
     }
 
-    async getEnvironment() {
+    getEnvironment() {
         // 初始化环境数据结构
         let environment = {
             blocks: {},          

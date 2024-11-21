@@ -15,6 +15,11 @@ class McBot {
         this.coder = new Coder(bot);
         this.executor = new Executor(bot, this.world);
         this.reflector = new Reflector();
+        
+        // 新增属性
+        this.complexTask = null;
+        this.subTasks = [];
+        this.currentTaskIndex = 0;
     }
 
     async init() {
@@ -60,13 +65,17 @@ class McBot {
         logger.info("正在生成技能代码");
         const result = await this.coder.gen(message, this.world.getEnvironment(), this.getInventories(), this.getBotPosition());
         if (!result) {
-            return; 
+            return {
+                success: false,
+                explain: "代码生成失败",
+                need_replan: false
+            }; 
         }
         this.bot.chat(this.coder.explanation);
         code = this.coder.code;
         functionName = this.coder.functionName;
-        logger.info("=== 生成技能代码 ===");
-        logger.pure('YELLOW', code);
+        //logger.info("=== 生成技能代码 ===");
+        //logger.pure('YELLOW', code);
 
         // 执行代码和反思的部分
         let attempts = 0;
@@ -87,32 +96,55 @@ class McBot {
                 this.getBotPosition(),
                 code,
                 logger.getLastReport(),
-                this.executor.lastError
+                this.executor.lastError,
+                this.complexTask,
+                this.subTasks,
+                this.currentTaskIndex
             );
 
             if (reflection) {
-                logger.pure('YELLOW', "反思: " + reflection.reason);
+                logger.pure('YELLOW', "反思: " + reflection.explain);
                 if (reflection.success) {
                     this.bot.chat('任务完成');
                     logger.info("=== 任务完成 ===");
                     this.coder.reset();
                     this.executor.reset();
-                    return;
+                    return {
+                        success: true,
+                        explain: "任务完成",
+                        need_replan: false
+                    };
                 } else {
+                    if (reflection.need_replan) {
+                        return {
+                            success: false,
+                            explain: reflection.explain,
+                            need_replan: true
+                        };
+                    }
+
                     //任务失败，重试
                     attempts++;
                     if (attempts >= MAX_ATTEMPTS) {
                         logger.warn(`任务失败，已重试${MAX_ATTEMPTS}次`);
                         this.bot.chat(`任务失败，已重试${MAX_ATTEMPTS}次`);
-                        return;
+                        return {
+                            success: false,
+                            explain: "子任务失败，已重试" + MAX_ATTEMPTS + "次",
+                            need_replan: false
+                        };
                     }
                     
                     this.bot.chat(`第${attempts}次尝试失败，正在重新生成代码...`);
                     logger.info(`第${attempts}次尝试失败，正在重新生成代码...`);
                     // 根据反思结果重新生成代码
-                    const result = await this.coder.gen(reflection.reason, this.world.getEnvironment(), this.getInventories(), this.getBotPosition());
+                    const result = await this.coder.gen(reflection.explain, this.world.getEnvironment(), this.getInventories(), this.getBotPosition());
                     if (!result) {
-                        return;
+                        return {
+                            success: false,
+                            explain: "代码生成失败",
+                            need_replan: false
+                        };
                     }
                     this.bot.chat(this.coder.explanation);
                     code = this.coder.code;
@@ -125,33 +157,63 @@ class McBot {
     async handleMessage(message) {
         logger.info("===== 收到任务 ==== ");
         logger.pure('YELLOW', " ***** " + message + " *****");
-        if (message == "e") {
-            const env = this.world.getEnvironment();
-            this.bot.chat(env);
-            this.bot.chat("拥有的物品")
-            const inv = this.getInventories();
-            this.bot.chat(inv);
-            return;
-        }
-
-        logger.info("=== 计划任务 ===");
-        const plan = await this.planner.plan(message, this.getInventories(), this.world.getEnvironment(), this.getBotPosition());
-        if (!plan) {
-            return;
-        }
-        this.bot.chat(plan.reason);
-        logger.pure("YELLOW", "任务分解理由: " + plan.reason);
-        for (const task of plan.sub_tasks) {
-            logger.pure("GREEN", "子任务: " + task);
-        }
-
         
-        for (const task of plan.sub_tasks) {
-            logger.info("执行任务: " + task);
-            this.bot.chat("执行任务: " + task);
-            await this.doSingleTask(task);
+        //最多尝试3次
+        const MAX_ATTEMPTS = 3;
+        let attempts = 0;
+        let reflection = null;
+
+        // 保存复杂任务
+        this.complexTask = message;
+        
+        while (attempts < MAX_ATTEMPTS) {
+            attempts++;
+            // 获取任务分解
+            const plan = await this.planner.plan(message, this.getInventories(), this.world.getEnvironment(), this.getBotPosition(), reflection);
+            if (!plan) {
+                return;
+            }
+            
+            // 保存子任务列表
+            this.subTasks = plan.sub_tasks;
+            this.currentTaskIndex = 0;
+            
+            this.bot.chat(plan.reason);
+            logger.pure("YELLOW", "任务分解理由: " + plan.reason);
+            for (const task of plan.sub_tasks) {
+                logger.pure("GREEN", "子任务: " + task);
+            }
+
+            for (const task of plan.sub_tasks) {
+                logger.info("执行任务: " + task);
+                this.bot.chat("执行任务: " + task);
+                const result = await this.doSingleTask(task);
+                if (result.success) {
+                    this.currentTaskIndex++;
+                    logger.info("任务完成");
+                    this.bot.chat("任务完成");
+                    this.bot.chat(result.explain);
+                } else {
+                    logger.info("任务失败");
+                    logger.warn(result.explain);
+                    this.bot.chat("任务失败");
+                    this.bot.chat(result.explain);
+                    if (result.need_replan) {
+                        // 直接将失败原因作为反思结果
+                        reflection = `上一次失败的任务分解:\n${plan.sub_tasks.map((task, index) => `${index + 1}. ${task}`).join('\n')}\n失败反思: ${result.explain}`
+                        break;
+                    }
+                }
+            }
+            if (this.currentTaskIndex >= plan.sub_tasks.length) {
+                logger.info("所有任务完成");
+                this.bot.chat("所有任务完成");
+                break;
+            }
         }
     }
 }
+
+
 
 module.exports = McBot;

@@ -156,7 +156,11 @@ class Action {
         }
 
         try {
-            await this.bot.pathfinder.goto(new GoalNear(craftingTable.position.x, craftingTable.position.y, craftingTable.position.z, 1));
+            // 检查是否已经在工作台附近
+            const distanceToTable = this.bot.entity.position.distanceTo(craftingTable.position);
+            if (distanceToTable > 3) {  // 只有距离超过3格才需要寻路
+                await this.bot.pathfinder.goto(new GoalNear(craftingTable.position.x, craftingTable.position.y, craftingTable.position.z, 1));
+            }
             
             let craftedCount = 0;
             while (craftedCount < count) {
@@ -179,7 +183,7 @@ class Action {
         this.logger.report('到达目的地: ' + position.x + ' ' + position.y + ' ' + position.z, this.bot);
     }
 
-    async findPlacePosition() {
+    async findPlaceBlock() {
         // 获取机器人当前位置
         const botPos = this.bot.entity.position;
         
@@ -213,7 +217,7 @@ class Action {
             });
 
             // 检查：
-            // 1. 目标置是空的
+            // 1. 目标位置是空的
             // 2. 机器人可以看到这个方块
             // 3. 目标位置没实体
             if ((!targetBlock || targetBlock.boundingBox === 'empty') && 
@@ -228,42 +232,33 @@ class Action {
         return null;
     }
 
-    async placeBlock(itemName, count = 1) {
+    async placeBlock(itemName, referenceBlock) {
         const item = this.bot.inventory.findInventoryItem(itemName);
         
         if (!item) {
             this.logger.report('找不到物品: ' + itemName, this.bot);
-            return;
+            return false;
         }
 
-        let placedCount = 0;
-        while (placedCount < count) {
-            try {
-                await this.bot.equip(item, 'hand');
-                
-                // 寻找可放置位置
-                const targetBlock = await this.findPlacePosition();
-                if (!targetBlock) {
-                    this.logger.report('找不到可以放置的地方', this.bot);
-                    return;
-                }
-                
-                // 创建一个新的 Vec3 实例来指定放置方向
-                const faceVector = new Vec3(0, 1, 0);
-                this.logger.info(faceVector);
-                this.logger.error(targetBlock);
-                await this.bot.placeBlock(targetBlock, faceVector);
-                placedCount++;
-                
-                this.logger.report('已放置 ' + placedCount + ' 个 ' + itemName, this.bot);
-            } catch (err) {
-                this.logger.report('放置失败: ' + err.message, this.bot);
-                this.logger.error(err);
-                return;
-            }
+        if (!referenceBlock) {
+            this.logger.report('没有提供参考方块喵！', this.bot);
+            return false;
         }
 
-        this.logger.report('放置完成！共放置了 ' + placedCount + ' 个 ' + itemName, this.bot);
+        try {
+            await this.bot.equip(item, 'hand');
+            
+            // 创建一个新的 Vec3 实例来指定放置方向
+            const faceVector = new Vec3(0, 1, 0);
+            await this.bot.placeBlock(referenceBlock, faceVector);
+            
+            this.logger.report('已放置 ' + itemName, this.bot);
+            return true;
+        } catch (err) {
+            this.logger.report('放置失败: ' + err.message, this.bot);
+            this.logger.error(err);
+            return false;
+        }
     }
 
 

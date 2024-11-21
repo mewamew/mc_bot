@@ -5,12 +5,6 @@ if (!woodResult.success) {
 } else {
     bot.chat('木头收集完成啦！');
 }
-const coalResult = await action.mineBlock('coal_ore', 4, 64);
-if (!coalResult.success) {
-    bot.chat(`只收集到了 ${coalResult.collectedCount} 个煤炭`);
-} else {
-    bot.chat('煤炭收集完成啦！');
-}
 
-//挖矿结束后，如果想返回地面，可以调用以下代码
-await action.returnToGround();
+// 挖煤炭
+const coalResult = await action.mineBlock('coal_ore', 4, 64);

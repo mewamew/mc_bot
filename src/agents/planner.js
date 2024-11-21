@@ -7,7 +7,7 @@ class Planner {
     constructor() {
     }
 
-    async plan(message, inventory, environment, bot_position) {
+    async plan(message, inventory, environment, bot_position, reflection=null) {
         try {
             let prompt = fs.readFileSync('src/prompts/plan.txt', 'utf8');
             prompt = prompt.replace('{{inventory}}', inventory);
@@ -15,6 +15,11 @@ class Planner {
             prompt = prompt.replace('{{bot_position}}', bot_position);
             prompt = prompt.replace('{{environment}}', environment);
             prompt = prompt.replace('{{rules}}', fs.readFileSync('src/prompts/model_instructions.md', 'utf8'));
+            if (reflection) {
+                prompt = prompt.replace('{{reflection}}', reflection);
+            } else {
+                prompt = prompt.replace('{{reflection}}', '');
+            }
             const messages = [
                 { role: "user", content: prompt}
             ];

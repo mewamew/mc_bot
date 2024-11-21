@@ -19,12 +19,13 @@ class LLM {
     while (retries <= maxRetries) {
       try {
 
-        /*
+        
         if (LLM_DEBUG != "false") {
           logger.info("===== LLM输入 ==== ");
           logger.pure('CYAN', messages[0].content);
         }
-        */
+        
+        
 
         const response = await axios.post(this.API_URL, {
           model: this.MODEL,

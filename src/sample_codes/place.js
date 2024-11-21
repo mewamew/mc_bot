@@ -1,3 +1,9 @@
 //放置物品到地上的示例代码
-await action.placeBlock("oak_planks",1);
+const referenceBlock = await action.findPlaceBlock();
+if (referenceBlock) {
+    await action.placeBlock('stone', referenceBlock);
+} else {
+    logger.report('没有找到可以放置的地方', bot);
+}
+
 

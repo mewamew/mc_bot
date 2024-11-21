@@ -13,6 +13,8 @@
 任务信息:
 {{task}}
 
+{{reflection}}
+
 位置信息:
 {{bot_position}}
 
