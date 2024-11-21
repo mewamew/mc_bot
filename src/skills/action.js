@@ -306,14 +306,36 @@ class Action {
     async returnToGround() {
         await this.equipPickaxe();
         
-        // 检查当前是否已在地面
+        // 定义可通过的方块类型
+        const passableBlocks = [
+            'air',
+            'snow',
+            'grass',
+            'tall_grass',
+            'fern',
+            'large_fern',
+            'dead_bush',
+            'dandelion',
+            'poppy',
+            'blue_orchid',
+            'allium',
+            'azure_bluet',
+            'red_tulip',
+            'orange_tulip',
+            'white_tulip',
+            'pink_tulip',
+            'oxeye_daisy',
+            'cornflower',
+            'lily_of_the_valley'
+        ];
+
         const isAtSurface = () => {
             const pos = this.bot.entity.position
             
             // 检查头顶10格是否通畅
             for (let y = 1; y <= 10; y++) {
                 const block = this.bot.blockAt(pos.offset(0, y, 0))
-                if (!block || block.name !== 'air') return false
+                if (!block || !passableBlocks.includes(block.name)) return false
             }
             
             // 检查周围2格范围是否开阔(检查2层高度)
@@ -321,7 +343,7 @@ class Action {
                 for (let x = -2; x <= 2; x++) {
                     for (let z = -2; z <= 2; z++) {
                         const block = this.bot.blockAt(pos.offset(x, y, z))
-                        if (!block || block.name !== 'air') return false
+                        if (!block || !passableBlocks.includes(block.name)) return false
                     }
                 }
             }

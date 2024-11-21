@@ -45,7 +45,7 @@ API示例:
    - 函数只接受bot参数
    - 禁止内部函数定义
    - 禁止箭头函数和函数表达式
-   - 禁止无限循环和递归
+   - 禁止无限循环和递归，确保函数在有限的时间能内执行完毕
    - 禁止事件监听(bot.on/once)
    - 严格参考示例代码的工具函数，能使用工具函数就使用工具函数，禁止调用不存在的接口
    - 使用logger.report替代bot.chat。调用用法：logger.report('message', bot)
@@ -55,6 +55,11 @@ API示例:
    - 函数名必须表达完整功能
    - 关键步骤必须有日志输出
    - 必须处理异常情况
+   - 代码中需要频繁检查 shouldStop 变量:
+     * 所有循环条件中必须包含 shouldStop 的判断
+     * 在关键操作前要检查 shouldStop (if (shouldStop) return)
+     * 长时间操作中要定期检查 shouldStop
+     * 当 shouldStop 为 true 时立即终止并返回
 
 
 === 输出示例 ===
