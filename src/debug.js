@@ -1,8 +1,8 @@
 const mineflayer = require('mineflayer')
 const { pathfinder } = require('mineflayer-pathfinder')
 const logger = require('./utils/logger')
-const Utils = require('./skills/utils');
-const Vec3 = require('vec3')
+const Action = require('./skills/action');
+const World = require('./skills/world') 
 
 const bot = mineflayer.createBot({
   host: 'localhost', // minecraft 服务器的 IP 地址
@@ -18,9 +18,16 @@ bot.loadPlugin(require('mineflayer-collectblock').plugin)
 
 
 bot.on('chat', async (username, message) => {
+  if (message === 'ct') {
+    const world = new World(bot);
+    const position = await world.getNearestCraftingTablePosition();
+    console.log(position);
+    return;
+  }
+
 
   if (message === 'mc') {
-    const utils = new Utils(bot, logger);
+    const utils = new Action(bot, logger);
     try { 
       await utils.mineBlock("coal_ore", 4, 64);
     } catch (err) {
@@ -30,7 +37,7 @@ bot.on('chat', async (username, message) => {
   }
 
   if (message === 'mi') {
-    const utils = new Utils(bot, logger);
+    const utils = new Action(bot, logger);
     try { 
       await utils.mineBlock("iron_ore", 4, 64);
     } catch (err) {
@@ -40,7 +47,7 @@ bot.on('chat', async (username, message) => {
   }
 
   if (message === 'lp') {
-    const utils = new Utils(bot, logger);
+    const utils = new Action(bot, logger);
     try { 
       await utils.lookAtNearestPlayer();
     } catch (err) {
@@ -50,7 +57,7 @@ bot.on('chat', async (username, message) => {
   }
 
   if (message === 'l') {
-    const utils = new Utils(bot, logger);
+    const utils = new Action(bot, logger);
     try { 
       await utils.mineBlock("oak_log", 4, 64);
       await utils.lookAtNearestPlayer();
@@ -61,7 +68,7 @@ bot.on('chat', async (username, message) => {
   }
 
   if (message === 'g') {
-    const utils = new Utils(bot, logger);
+    const utils = new Action(bot, logger);
     try { 
       await utils.returnToGround();
     } catch (err) {

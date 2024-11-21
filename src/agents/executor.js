@@ -2,11 +2,12 @@ const vm = require('vm');
 const { GoalNear, GoalFollow, GoalXZ, GoalGetToBlock, GoalLookAtBlock } = require('mineflayer-pathfinder').goals;
 const Vec3 = require('vec3').Vec3;
 const logger = require('../utils/logger');
-const Utils = require('../skills/utils');
+const Action = require('../skills/action');
 
 class Executor {
-    constructor(bot) {
+    constructor(bot, world) {
         this.bot = bot;
+        this.world = world;
         this._currentTask = null;
         this._currentContext = null;
     }
@@ -29,7 +30,7 @@ class Executor {
         if(!mcData){
             throw new Error('mcData 初始化失败');
         }
-        const utils = new Utils(this.bot, logger);
+        const action = new Action(this.bot, logger);
         this.dependencies = {
             bot: this.bot,
             require,
@@ -48,8 +49,9 @@ class Executor {
             GoalLookAtBlock,
             mcData,
             // 工具类
-            utils,
-            logger
+            action,
+            logger,
+            world: this.world
         };
     }
 
@@ -94,7 +96,7 @@ class Executor {
                 setTimeout(() => {
                     this.cleanup();
                     reject(new Error('任务执行超时'));
-                }, 30000);
+                }, 120000);
             });
             
             this._currentTask = Promise.race([

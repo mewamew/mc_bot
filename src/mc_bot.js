@@ -4,16 +4,16 @@ const Reflector = require('./agents/reflector');
 const Executor = require('./agents/executor');
 const SkillManager = require('./skills/skill_manager');
 const logger = require('./utils/logger');
-const Vec3 = require('vec3');
-
+const World = require('./skills/world');
 
 class McBot {
     constructor(bot) {
         this.bot = bot;
+        this.world = new World(bot);
         this.skillManager = new SkillManager();
         this.planner = new Planner();
         this.coder = new Coder(bot);
-        this.executor = new Executor(bot);
+        this.executor = new Executor(bot, this.world);
         this.reflector = new Reflector();
     }
 
@@ -37,210 +37,12 @@ class McBot {
         if (Object.keys(inventory).length === 0) {
             return "当前为空";
         }
-        
-        // 将inventory对象转换为字符串形式
-        return Object.entries(inventory)
+
+        const result = Object.entries(inventory)
             .map(([itemName, count]) => `${itemName}: ${count}`)
             .join('\n');
-    }
-
-    //TODO 环境信息的获取会越来越复杂，可以考虑独立一个文件来维护
-    getEnvironment() {
-        // 初始化环境数据结构
-        let environment = {
-            blocks: {},          
-            entities: {},        
-            items: {},          
-            terrain: {
-                heightMap: {},   
-                layers: [],      
-                summary: ''      
-            }
-        };
-
-        // 获取机器人当前位置
-        const botPos = this.bot.entity.position;
-        const scanRadius = 16;   
-        
-        // 记录每个y层的方块分布
-        let layerDistribution = {};
-        
-        // 初始化工作台距离追踪
-        let nearestCraftingTable = null;
-        let minCraftingTableDist = Infinity;
-        
-        // 初始化最近玩家距离追踪
-        let nearestPlayer = null;
-        let minPlayerDist = Infinity;
-        
-        // 扫描周围区域的地形
-        for (let x = -scanRadius; x <= scanRadius; x++) {
-            for (let z = -scanRadius; z <= scanRadius; z++) {
-                // 从上往下扫描获取地形信息
-                for (let y = Math.floor(botPos.y) + 32; y >= Math.floor(botPos.y) - 32; y--) {
-                    const pos = new Vec3(
-                        Math.floor(botPos.x) + x,
-                        y,
-                        Math.floor(botPos.z) + z
-                    );
-                    const block = this.bot.blockAt(pos);
-                    
-                    if (!block || block.name === 'air') continue;
-
-                    // 检查是否是工作台并更新最近距离
-                    if (block.name === 'crafting_table') {
-                        const dist = pos.distanceTo(botPos);
-                        if (dist < minCraftingTableDist) {
-                            minCraftingTableDist = dist;
-                            nearestCraftingTable = pos;
-                        }
-                    }
-
-                    // 统计方块总数
-                    if (!environment.blocks[block.name]) {
-                        environment.blocks[block.name] = 0;
-                    }
-                    environment.blocks[block.name]++;
-                    
-                    // 记录每个高度层的方块分布
-                    if (!layerDistribution[y]) {
-                        layerDistribution[y] = {};
-                    }
-                    if (!layerDistribution[y][block.name]) {
-                        layerDistribution[y][block.name] = 0;
-                    }
-                    layerDistribution[y][block.name]++;
-                }
-            }
-        }
-
-        // 分析地形层次
-        let terrainDescription = [];
-        
-        // 找出主要的地层分布
-        let significantLayers = [];
-        Object.entries(layerDistribution).forEach(([y, blocks]) => {
-            // 找出该层最主要的方块类型
-            const mainBlock = Object.entries(blocks)
-                .sort(([,a], [,b]) => b - a)[0];
-            if (mainBlock && mainBlock[1] > 10) { // 只记录数量超过10个的主要方块
-                significantLayers.push({
-                    y: parseInt(y),
-                    block: mainBlock[0],
-                    count: mainBlock[1]
-                });
-            }
-        });
-
-        // 合并相邻的相同类型层
-        let mergedLayers = [];
-        let currentLayer = null;
-        significantLayers.sort((a, b) => b.y - a.y).forEach(layer => {
-            if (!currentLayer) {
-                currentLayer = {...layer, thickness: 1};
-            } else if (currentLayer.block === layer.block && 
-                       Math.abs(currentLayer.y - layer.y) === 1) {
-                currentLayer.thickness++;
-                currentLayer.y = layer.y;
-            } else {
-                mergedLayers.push(currentLayer);
-                currentLayer = {...layer, thickness: 1};
-            }
-        });
-        if (currentLayer) {
-            mergedLayers.push(currentLayer);
-        }
-
-        // 生成地形描述
-        if (mergedLayers.length > 0) {
-            terrainDescription.push('地层分布(从上到下):');
-            mergedLayers.forEach(layer => {
-                terrainDescription.push(
-                    `- 高度 ${layer.y}: ${layer.block} (厚度: ${layer.thickness}层)`
-                );
-            });
-        }
-
-        // 获取周围的实体
-        const nearbyEntities = this.bot.entities;
-        for (const entity of Object.values(nearbyEntities)) {
-            if (!entity || entity === this.bot.entity) continue;
-
-            if (entity.type === 'player') {
-                const dist = entity.position.distanceTo(botPos);
-                if (dist < minPlayerDist) {
-                    minPlayerDist = dist;
-                    nearestPlayer = entity;
-                }
-            } else if (entity.type === 'item') {
-                const itemName = entity.metadata[7]?.itemId?.replace('minecraft:', '');
-                if (itemName) {
-                    if (!environment.items[itemName]) {
-                        environment.items[itemName] = 0;
-                    }
-                    environment.items[itemName] += entity.metadata[7].itemCount || 1;
-                }
-            } else if (entity.type) {
-                if (!environment.entities[entity.type]) {
-                    environment.entities[entity.type] = 0;
-                }
-                environment.entities[entity.type]++;
-            }
-        }
-
-        // 如果周围什么都没有，返回"当前为空"
-        if (Object.keys(environment.blocks).length === 0 && 
-            Object.keys(environment.entities).length === 0 &&
-            Object.keys(environment.items).length === 0) {
-            return "当前为空";
-        }
-
-        // 在结果字符串开头添加工作台和玩家信息
-        let result = '';
-        if (nearestCraftingTable) {
-            result += `最近的工作台距离: ${minCraftingTableDist.toFixed(2)}格\n`;
-        } else {
-            result += "最近工作台：附近没有工作台\n";
-        }
-
-        if (nearestPlayer) {
-            result += `最近的玩家 ${nearestPlayer.username} 距离: ${minPlayerDist.toFixed(2)}格\n`;
-        } else {
-            result += "附近没有其他玩家\n";
-        }
-        result += "\n";
-        
-        // 添加地形描述
-        if (terrainDescription.length > 0) {
-            result += terrainDescription.join('\n') + '\n\n';
-        }
-        
-        // 添加方块统计
-        if (Object.keys(environment.blocks).length > 0) {
-            result += '周围的方块:\n';
-            result += Object.entries(environment.blocks)
-                .map(([blockName, count]) => `${blockName}: ${count}`)
-                .join('\n');
-        }
-        
-        // 添加掉落物统计
-        if (Object.keys(environment.items).length > 0) {
-            if (result) result += '\n\n';
-            result += '周围的掉落物:\n';
-            result += Object.entries(environment.items)
-                .map(([itemName, count]) => `${itemName}: ${count}`)
-                .join('\n');
-        }
-        
-        // 添加实体统计
-        if (Object.keys(environment.entities).length > 0) {
-            if (result) result += '\n\n';
-            result += '周围的实体:\n';
-            result += Object.entries(environment.entities)
-                .map(([entityType, count]) => `${entityType}: ${count}`)
-                .join('\n');
-        }
-
+        logger.info("拥有的物品:");
+        console.log(result);
         return result;
     }
 
@@ -253,32 +55,20 @@ class McBot {
     async doSingleTask(message) {
         let code = '';
         let functionName = '';
-        let generated = false;
 
-        //logger.info("尝试从技能库中匹配技能");
-        //const skill = await this.skillManager.getSkill(message);
-        const skill = null;
-        if (skill) {
-            this.bot.chat(`已找到匹配的技能: ${skill.description}`);
-            code = skill.code;
-            functionName = skill.functionName;
-        } else {
-            // 生成代码
-            logger.info("匹配不到技能，尝试生成技能代码");
-            const result = await this.coder.gen(message, this.getEnvironment(), this.getInventories(), this.getBotPosition());
-            if (!result) {
-                return; 
-            }
-            this.bot.chat(this.coder.explanation);
-            code = this.coder.code;
-            functionName = this.coder.functionName;
-            generated = true;
-            logger.info("=== 生成技能代码 ===");
-            logger.pure('YELLOW', code);
-
+        // 直接生成代码
+        logger.info("正在生成技能代码");
+        const result = await this.coder.gen(message, this.world.getEnvironment(), this.getInventories(), this.getBotPosition());
+        if (!result) {
+            return; 
         }
+        this.bot.chat(this.coder.explanation);
+        code = this.coder.code;
+        functionName = this.coder.functionName;
+        logger.info("=== 生成技能代码 ===");
+        logger.pure('YELLOW', code);
 
-        // 执行代码和反思的部分需要修改
+        // 执行代码和反思的部分
         let attempts = 0;
         const MAX_ATTEMPTS = 5;
         
@@ -292,7 +82,7 @@ class McBot {
             logger.info("===执行完毕，开始反思 ===");
             const reflection = await this.reflector.validate(
                 message,
-                this.getEnvironment(),
+                this.world.getEnvironment(),
                 this.getInventories(),
                 this.getBotPosition(),
                 code,
@@ -305,11 +95,6 @@ class McBot {
                 if (reflection.success) {
                     this.bot.chat('任务完成');
                     logger.info("=== 任务完成 ===");
-                    if (generated) {
-                        // 更新技能库
-                        //
-                        //await this.skillManager.saveSkill(message,this.coder.functionDescription, this.coder.functionName, this.coder.code);
-                    }
                     this.coder.reset();
                     this.executor.reset();
                     return;
@@ -324,24 +109,14 @@ class McBot {
                     
                     this.bot.chat(`第${attempts}次尝试失败，正在重新生成代码...`);
                     logger.info(`第${attempts}次尝试失败，正在重新生成代码...`);
-                    // 重新生成代码
-                    if (!generated) {
-                        const result = await this.coder.gen(message, this.getEnvironment(), this.getInventories(), this.getBotPosition());
-                        if (!result) {
-                            return;
-                        }
-                    } else {
-                        const result = await this.coder.gen(reflection.reason, this.getEnvironment(), this.getInventories(), this.getBotPosition());
-                        if (!result) {
-                            return;
-                        }
+                    // 根据反思结果重新生成代码
+                    const result = await this.coder.gen(reflection.reason, this.world.getEnvironment(), this.getInventories(), this.getBotPosition());
+                    if (!result) {
+                        return;
                     }
                     this.bot.chat(this.coder.explanation);
                     code = this.coder.code;
-                    generated = true;
                     functionName = this.coder.functionName;
-                    //logger.info("=== 生成技能代码 ===");
-                    //logger.pure('YELLOW', code);
                 }
             }
         }
@@ -351,7 +126,7 @@ class McBot {
         logger.info("===== 收到任务 ==== ");
         logger.pure('YELLOW', " ***** " + message + " *****");
         if (message == "e") {
-            const env = this.getEnvironment();
+            const env = this.world.getEnvironment();
             this.bot.chat(env);
             this.bot.chat("拥有的物品")
             const inv = this.getInventories();
@@ -360,25 +135,22 @@ class McBot {
         }
 
         logger.info("=== 计划任务 ===");
-        const plan = await this.planner.plan(message, this.getInventories(), this.getEnvironment(), this.getBotPosition());
+        const plan = await this.planner.plan(message, this.getInventories(), this.world.getEnvironment(), this.getBotPosition());
         if (!plan) {
             return;
         }
         this.bot.chat(plan.reason);
         logger.pure("YELLOW", "任务分解理由: " + plan.reason);
         for (const task of plan.sub_tasks) {
-            logger.pure("GREEN", "子任务: " + task.task + " " + task.quantity + " " + task.item);
+            logger.pure("GREEN", "子任务: " + task);
         }
 
-        /*
         
         for (const task of plan.sub_tasks) {
             logger.info("执行任务: " + task);
             this.bot.chat("执行任务: " + task);
             await this.doSingleTask(task);
         }
-        */
-        
     }
 }
 

@@ -2,7 +2,7 @@ const Vec3 = require('vec3');
 const { goals: { Goal, GoalNear, GoalBlock}, Pathfinder } = require('mineflayer-pathfinder');
 
 
-class Utils {
+class Action {
     constructor(bot, logger) {
         this.bot = bot;
         this.logger = logger;
@@ -35,7 +35,10 @@ class Utils {
         const blockID = this.mcData.blocksByName[blockType]?.id
         if (!blockID) {
             this.logger.report('方块类型错误喵：' + blockType, this.bot);
-            return
+            return {
+                success: false,
+                collectedCount: 0
+            };
         }
 
         const countItemName = blockType === 'coal_ore' ? 'coal' : blockType
@@ -51,7 +54,10 @@ class Utils {
 
             if (!blocks || blocks.length === 0) {
                 this.logger.report('附近找不到 ' + blockType + ' 了喵~', this.bot);
-                break
+                return {
+                    success: false,
+                    collectedCount: minedCount
+                };
             }
 
             // 按距离排序
@@ -87,6 +93,10 @@ class Utils {
         }
 
         this.logger.report(`挖掘任务完成啦！一共挖到了 ${minedCount} 个 ${countItemName} 喵~`, this.bot);
+        return {
+            success: minedCount >= count,
+            collectedCount: minedCount
+        };
     }
 
     getItemCount(itemName) {
@@ -392,4 +402,4 @@ class Utils {
 
 }
 
-module.exports = Utils;
+module.exports = Action;

@@ -25,10 +25,12 @@ bot.on('chat', async (username, message) => {
   if (username === bot.username) {
     return
   }
-
-  // 忽略系统指令
-  if(message.startsWith("Teleported")) {
-    return;
+  const ignore_messages = ["Teleported", "Set", "Killed", "Inventory", "Removed", "Applied"];
+  for (const msg of ignore_messages) {
+    if (message.startsWith(msg)) {
+      console.log(`忽略系统指令: ${message}`);
+      return;
+    }
   }
 
   try {

@@ -14,6 +14,7 @@ class Planner {
             prompt = prompt.replace('{{task}}', message);
             prompt = prompt.replace('{{bot_position}}', bot_position);
             prompt = prompt.replace('{{environment}}', environment);
+            prompt = prompt.replace('{{rules}}', fs.readFileSync('src/prompts/model_instructions.md', 'utf8'));
             const messages = [
                 { role: "user", content: prompt}
             ];
