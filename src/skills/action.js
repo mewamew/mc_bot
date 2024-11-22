@@ -74,7 +74,7 @@ class Action {
         await this.bot.lookAt(pos);
     }
 
-    async mineBlock(blockType, count, maxDistance = 4) {
+    async mineBlock(blockType, maxDistance = 4) {
         // 先判断需要使用的工具类型
         const woodTypes = ['oak_log', 'birch_log', 'spruce_log', 'jungle_log', 'acacia_log', 'dark_oak_log'];
         const needAxe = woodTypes.includes(blockType);
@@ -89,68 +89,34 @@ class Action {
         const blockID = this.mcData.blocksByName[blockType]?.id
         if (!blockID) {
             this.logger.report('方块类型错误喵：' + blockType, this.bot);
-            return {
-                success: false,
-                collectedCount: 0
-            };
+            return false;
         }
 
-        const countItemName = blockType === 'coal_ore' ? 'coal' : blockType
-        let minedCount = 0
-        this.logger.report('开始挖掘，目标是挖到 ' + count + ' 个 ' + countItemName + ' 喵！', this.bot);
+        const blocks = this.bot.findBlocks({
+            matching: blockID,
+            maxDistance: maxDistance,
+            count: 1
+        })
 
-        while (minedCount < count) {
-            const blocks = this.bot.findBlocks({
-                matching: blockID,
-                maxDistance: maxDistance,
-                count: 10
-            })
-
-            if (!blocks || blocks.length === 0) {
-                this.logger.report('附近找不到 ' + blockType + ' 了喵~', this.bot);
-                return {
-                    success: false,
-                    collectedCount: minedCount
-                };
-            }
-
-            // 按距离排序
-            const botPos = this.bot.entity.position
-            blocks.sort((a, b) => botPos.distanceTo(a) - botPos.distanceTo(b))
-
-            for (const blockPos of blocks) {
-                const block = this.bot.blockAt(blockPos)
-                if (!block) continue
-
-                try {
-                    // 直接使用 pathfinder 移动到方块旁边并挖掘
-                    const goal = new GoalBlock(blockPos.x, blockPos.y, blockPos.z)
-                    await this.bot.pathfinder.goto(goal)
-                    
-                    const beforeCount = this.getItemCount(countItemName)
-                    await this.bot.collectBlock.collect(block)
-                    await this.bot.waitForTicks(10)
-                    
-                    const afterCount = this.getItemCount(countItemName)
-                    const collectedAmount = afterCount - beforeCount
-                    
-                    if (collectedAmount > 0) {
-                        minedCount += collectedAmount
-                        this.logger.report(`喵~挖到了 ${collectedAmount} 个 ${countItemName}，总共已经有 ${minedCount} 个了！`, this.bot);
-                        break
-                    }
-                } catch (err) {
-                    this.logger.report('这个方块挖不到呢，试试下一个喵：' + err.message, this.bot);
-                    continue
-                }
-            }
+        if (!blocks || blocks.length === 0) {
+            this.logger.report('附近找不到 ' + blockType, this.bot);
+            return false;
         }
 
-        this.logger.report(`挖掘任务完成啦！一共挖到了 ${minedCount} 个 ${countItemName} 喵~`, this.bot);
-        return {
-            success: minedCount >= count,
-            collectedCount: minedCount
-        };
+        const blockPos = blocks[0];
+        const block = this.bot.blockAt(blockPos);
+        if (!block) return false;
+
+        try {
+            const goal = new GoalBlock(blockPos.x, blockPos.y, blockPos.z);
+            await this.bot.pathfinder.goto(goal);
+            await this.bot.collectBlock.collect(block);
+            this.logger.report(`成功挖到一个 ${blockType} 喵！`, this.bot);
+            return true;
+        } catch (err) {
+            this.logger.report('挖掘失败了喵：' + err.message, this.bot);
+            return false;
+        }
     }
 
     getItemCount(itemName) {

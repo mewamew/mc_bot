@@ -60,6 +60,7 @@ API示例:
      * 在关键操作前要检查 shouldStop (if (shouldStop) return)
      * 长时间操作中要定期检查 shouldStop
      * 当 shouldStop 为 true 时立即终止并返回
+   - 为了让bot更有趣，可以在任务开始或者结束做一些有趣的动作，比如跳舞，挥手，跳跃，蹲下等，参数是tick数
 
 
 === 输出示例 ===
