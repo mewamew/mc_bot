@@ -1,5 +1,5 @@
 const Vec3 = require('vec3');
-const { goals: { Goal, GoalNear, GoalBlock}, Pathfinder } = require('mineflayer-pathfinder');
+const { goals: { Goal, GoalNear, GoalBlock}, Pathfinder, Movements } = require('mineflayer-pathfinder');
 
 
 class Action {
@@ -10,7 +10,6 @@ class Action {
 
     }
     async wave(times = 3) {
-        this.logger.report('Hi～', this.bot);
         for (let i = 0; i < times; i++) {
             // 挥动主手
             await this.bot.swingArm('right');
@@ -66,7 +65,7 @@ class Action {
     async lookAtNearestPlayer() {
         const players = this.bot.players;
         if (Object.keys(players).length === 0) {
-            this.logger.report(' 你在哪？', this.bot);
+            this.bot.chat('你在哪？');
             return;
         }
         const pos = players[Object.keys(players)[0]].entity.position;
@@ -198,10 +197,32 @@ class Action {
         }
     }
 
-    async moveTo(position) {
-        await this.bot.pathfinder.goto(new GoalNear(position.x, position.y, position.z, 1));
-        this.logger.report('到达目的地: ' + position.x + ' ' + position.y + ' ' + position.z, this.bot);
+    async moveTo(targetBlock, timeout = 60000) {  // 默认30秒超时
+        try {
+            // 创建移动任务的Promise
+            const defaultMove = new Movements(this.bot);
+            defaultMove.allow1by1towers = false;
+            this.bot.pathfinder.setMovements(defaultMove);
+            const movePromise = this.bot.pathfinder.goto(new GoalNear(targetBlock.x, targetBlock.y, targetBlock.z, 1));
+            
+            // 创建超时Promise
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                    this.bot.pathfinder.stop(); // 停止寻路
+                    reject(new Error('移动超时了喵！'));
+                }, timeout);
+            });
+
+            // 使用Promise.race竞争
+            await Promise.race([movePromise, timeoutPromise]);
+            this.logger.report('到达目的地: ' + targetBlock.x + ' ' + targetBlock.y + ' ' + targetBlock.z, this.bot);
+            return true;
+        } catch (err) {
+            this.logger.report('移动失败了喵：' + err.message, this.bot);
+            return false;
+        }
     }
+
 
     async findPlaceBlock() {
         // 获取机器人当前位置
@@ -225,25 +246,47 @@ class Action {
         for (const blockPos of blocks) {
             const block = this.bot.blockAt(blockPos);
             const targetPos = blockPos.offset(0, 1, 0);
-            const targetBlock = this.bot.blockAt(targetPos);
+            
+            // 检查目标位置周围一圈（包括上下）是否都是空的
+            let surroundingClear = true;
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = 0; dy <= 1; dy++) {  // 只检查同层和上一层
+                    for (let dz = -1; dz <= 1; dz++) {
+                        // 跳过目标方块位置本身
+                        if (dx === 0 && dy === 0 && dz === 0) continue;
+                        
+                        const checkPos = targetPos.offset(dx, dy, dz);
+                        const checkBlock = this.bot.blockAt(checkPos);
+                        
+                        // 如果周围有非空方块，标记为不可用
+                        if (checkBlock && checkBlock.boundingBox !== 'empty') {
+                            surroundingClear = false;
+                            break;
+                        }
+                    }
+                    if (!surroundingClear) break;
+                }
+                if (!surroundingClear) break;
+            }
             
             // 检查目标位置是否有实体
-            const entities = this.bot.entities;
-            const isEntityAtTarget = Object.values(entities).some(entity => {
+            const isEntityAtTarget = Object.values(this.bot.entities).some(entity => {
                 const entityPos = entity.position;
-                return Math.floor(entityPos.x) === targetPos.x &&
-                       Math.floor(entityPos.y) === targetPos.y &&
-                       Math.floor(entityPos.z) === targetPos.z;
+                return Math.abs(entityPos.x - targetPos.x) < 1 &&
+                       Math.abs(entityPos.y - targetPos.y) < 1 &&
+                       Math.abs(entityPos.z - targetPos.z) < 1;
             });
 
             // 检查：
             // 1. 目标位置是空的
             // 2. 机器人可以看到这个方块
-            // 3. 目标位置没实体
-            if ((!targetBlock || targetBlock.boundingBox === 'empty') && 
+            // 3. 目标位置周围一圈都是空的
+            // 4. 目标位置附近没有实体
+            if ((!this.bot.blockAt(targetPos) || this.bot.blockAt(targetPos).boundingBox === 'empty') && 
                 this.bot.canSeeBlock(block) &&
+                surroundingClear &&
                 !isEntityAtTarget) {
-                this.logger.report('找到可放置位置的参考方块: ' + block.position.x + ' ' + block.position.y + ' ' + block.position.z, this.bot);
+                this.logger.report('找到可放置位置的参考方块: ' + block.position.toString(), this.bot);
                 return block;
             }
         }

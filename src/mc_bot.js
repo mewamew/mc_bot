@@ -110,8 +110,6 @@ class McBot {
             if (reflection) {
                 logger.pure('YELLOW', "反思: " + reflection.explain);
                 if (reflection.success) {
-                    this.bot.chat('任务完成');
-                    logger.info("=== 任务完成 ===");
                     this.coder.reset();
                     this.executor.reset();
                     return {
@@ -172,7 +170,10 @@ class McBot {
         while (attempts < MAX_ATTEMPTS) {
             attempts++;
             // 获取任务分解
-            const plan = await this.planner.plan(message, this.getInventories(), this.world.getEnvironment(), this.getBotPosition(), reflection);
+            const plan = await this.planner.plan(message, 
+                        this.getInventories(), 
+                        this.world.getEnvironment(), 
+                        this.getBotPosition(), reflection);
             if (!plan) {
                 return;
             }
@@ -191,7 +192,7 @@ class McBot {
                 const result = await this.doSingleTask(task);
                 if (result.success) {
                     this.currentTaskIndex++;
-                    this.chat("任务完成");
+                    this.chat("任务完成:");
                     this.chat(result.explain);
                 } else {
                     this.chat("任务失败");
@@ -199,6 +200,9 @@ class McBot {
                     if (result.need_replan) {
                         // 直接将失败原因作为反思结果
                         reflection = `上一次失败的任务分解:\n${plan.sub_tasks.map((task, index) => `${index + 1}. ${task}`).join('\n')}\n失败反思: ${result.explain}`
+                        //重置
+                        this.coder.reset();
+                        this.executor.reset();
                         break;
                     }
                 }

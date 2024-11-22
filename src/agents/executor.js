@@ -88,7 +88,7 @@ class Executor {
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => {
                     reject(new Error('任务执行超时'));
-                }, 30000); // 30秒超时
+                }, 120000); // 120秒超时
             });
             
             // 执行主任务
@@ -118,7 +118,6 @@ class Executor {
         //停止当前任务
         if (this._currentContext && !this._currentContext.hasStopped) {
             // 设置停止标志
-            logger.info("强制停止任务");
             this._currentContext.shouldStop = true;
         }
         // 清空当前任务
