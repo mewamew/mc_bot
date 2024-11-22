@@ -9,10 +9,64 @@ class Action {
         this.mcData = require('minecraft-data')(bot.version);
 
     }
+    async wave(times = 3) {
+        this.logger.report('Hi～', this.bot);
+        for (let i = 0; i < times; i++) {
+            // 挥动主手
+            await this.bot.swingArm('right');
+            // 等待一小段时间
+            await this.bot.waitForTicks(10);
+            
+            // 如果不是最后一次挥手，就等待更长时间
+            if (i < times - 1) {
+                await this.bot.waitForTicks(20);
+            }
+        }
+    }
+
+    async sneak(duration = 40) {
+        this.bot.setControlState('sneak', true);
+        await this.bot.waitForTicks(duration);
+        this.bot.setControlState('sneak', false);
+    }
+
+    async jump(times = 1) {
+        for (let i = 0; i < times; i++) {
+            this.bot.setControlState('jump', true);
+            await this.bot.waitForTicks(10);
+            this.bot.setControlState('jump', false);
+            
+            if (i < times - 1) {
+                await this.bot.waitForTicks(10);
+            }
+        }
+    }
+
+    async dance(duration = 100) {  // 跳舞！
+        const startTime = Date.now();
+        
+        while (Date.now() - startTime < duration * 50) {  // 转换为毫秒
+            // 随机选择动作
+            const action = Math.floor(Math.random() * 3);
+            switch(action) {
+                case 0:
+                    await this.wave(1);
+                    break;
+                case 1:
+                    await this.sneak(10);
+                    break;
+                case 2:
+                    await this.jump(1);
+                    break;
+            }
+            await this.bot.waitForTicks(5);
+        }
+    }
+
     async lookAtNearestPlayer() {
         const players = this.bot.players;
         if (Object.keys(players).length === 0) {
-            this.logger.report('附近没有玩家喵~', this.bot);
+            this.logger.report(' 你在哪？', this.bot);
             return;
         }
         const pos = players[Object.keys(players)[0]].entity.position;
@@ -416,7 +470,6 @@ class Action {
     }
 
     
-
 }
 
 module.exports = Action;
