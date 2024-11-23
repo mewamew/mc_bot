@@ -1,5 +1,5 @@
 //放置物品到地上的示例代码
-const referenceBlock = await action.findPlaceBlock();
+const referenceBlock = await world.findPlaceBlock();
 if (referenceBlock) {
     await action.placeBlock('stone', referenceBlock);
 } else {

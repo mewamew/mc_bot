@@ -224,77 +224,6 @@ class Action {
     }
 
 
-    async findPlaceBlock() {
-        // 获取机器人当前位置
-        const botPos = this.bot.entity.position;
-        
-        // 搜索附近的实心方块
-        const blocks = this.bot.findBlocks({
-            matching: (block) => block.boundingBox === 'block',
-            maxDistance: 3,
-            count: 256
-        });
-
-        // 按照距离排序
-        blocks.sort((a, b) => {
-            const distA = a.distanceTo(botPos);
-            const distB = b.distanceTo(botPos);
-            return distA - distB;
-        });
-
-        // 遍历找到的方块，检查其上方是否有合适的放置位置
-        for (const blockPos of blocks) {
-            const block = this.bot.blockAt(blockPos);
-            const targetPos = blockPos.offset(0, 1, 0);
-            
-            // 检查目标位置周围一圈（包括上下）是否都是空的
-            let surroundingClear = true;
-            for (let dx = -1; dx <= 1; dx++) {
-                for (let dy = 0; dy <= 1; dy++) {  // 只检查同层和上一层
-                    for (let dz = -1; dz <= 1; dz++) {
-                        // 跳过目标方块位置本身
-                        if (dx === 0 && dy === 0 && dz === 0) continue;
-                        
-                        const checkPos = targetPos.offset(dx, dy, dz);
-                        const checkBlock = this.bot.blockAt(checkPos);
-                        
-                        // 如果周围有非空方块，标记为不可用
-                        if (checkBlock && checkBlock.boundingBox !== 'empty') {
-                            surroundingClear = false;
-                            break;
-                        }
-                    }
-                    if (!surroundingClear) break;
-                }
-                if (!surroundingClear) break;
-            }
-            
-            // 检查目标位置是否有实体
-            const isEntityAtTarget = Object.values(this.bot.entities).some(entity => {
-                const entityPos = entity.position;
-                return Math.abs(entityPos.x - targetPos.x) < 1 &&
-                       Math.abs(entityPos.y - targetPos.y) < 1 &&
-                       Math.abs(entityPos.z - targetPos.z) < 1;
-            });
-
-            // 检查：
-            // 1. 目标位置是空的
-            // 2. 机器人可以看到这个方块
-            // 3. 目标位置周围一圈都是空的
-            // 4. 目标位置附近没有实体
-            if ((!this.bot.blockAt(targetPos) || this.bot.blockAt(targetPos).boundingBox === 'empty') && 
-                this.bot.canSeeBlock(block) &&
-                surroundingClear &&
-                !isEntityAtTarget) {
-                this.logger.report('找到可放置位置的参考方块: ' + block.position.toString(), this.bot);
-                return block;
-            }
-        }
-
-        this.logger.report('找不到合适的放置位置喵！', this.bot);
-        return null;
-    }
-
     async placeBlock(itemName, referenceBlock) {
         const item = this.bot.inventory.findInventoryItem(itemName);
         
@@ -478,7 +407,86 @@ class Action {
         this.logger.report('成功返回地面！', this.bot)
     }
 
-    
+    async meltItem(itemToSmelt, itemCount, fuelName, fuelCount) {
+        const furnace = this.bot.findBlock({
+            matching: this.mcData.blocksByName.furnace.id,
+            maxDistance: 32
+        });
+
+        if (!furnace) {
+            this.logger.report('找不到熔炉喵！', this.bot);
+            return false;
+        }
+
+        try {
+            // 移动到熔炉附近
+            const distanceToFurnace = this.bot.entity.position.distanceTo(furnace.position);
+            if (distanceToFurnace > 3) {
+                await this.moveTo(furnace.position);
+            }
+
+            // 打开熔炉
+            const furnaceBlock = await this.bot.openFurnace(furnace);
+
+            // 查找燃料
+            const fuel = this.bot.inventory.findInventoryItem(fuelName);
+            if (!fuel) {
+                this.logger.report(`找不到燃料喵！需要 ${fuelName}`, this.bot);
+                furnaceBlock.close();
+                return false;
+            }
+
+            // 查找要冶炼的物品
+            const itemToSmeltInv = this.bot.inventory.findInventoryItem(itemToSmelt);
+            if (!itemToSmeltInv) {
+                this.logger.report(`找不到要冶炼的物品：${itemToSmelt}`, this.bot);
+                furnaceBlock.close();
+                return false;
+            }
+
+            // 检查物品和燃料数量是否足够
+            if (itemToSmeltInv.count < itemCount) {
+                this.logger.report(`物品数量不足喵！只有 ${itemToSmeltInv.count} 个 ${itemToSmelt}`, this.bot);
+                furnaceBlock.close();
+                return false;
+            }
+
+            if (fuel.count < fuelCount) {
+                this.logger.report(`燃料数量不足喵！只有 ${fuel.count} 个 ${fuelName}`, this.bot);
+                furnaceBlock.close();
+                return false;
+            }
+
+            // 放入燃料和物品
+            await furnaceBlock.putFuel(fuel.type, null, fuelCount);
+            await furnaceBlock.putInput(itemToSmeltInv.type, null, itemCount);
+
+            this.logger.report(`放入了 ${fuelCount} 个 ${fuelName}，开始冶炼 ${itemCount} 个 ${itemToSmelt} 喵~`, this.bot);
+
+            // 等待冶炼完成
+            let smeltedCount = 0;
+            while (smeltedCount < itemCount) {
+                await new Promise(resolve => setTimeout(resolve, 1000)); // 每秒检查一次
+                const output = furnaceBlock.outputItem();
+                if (output) {
+                    smeltedCount = output.count;
+                    this.logger.report(`已经冶炼了 ${smeltedCount}/${itemCount} 个物品喵~`, this.bot);
+                }
+            }
+
+            // 取出产物
+            await furnaceBlock.takeOutput();
+            furnaceBlock.close();
+            
+            this.logger.report(`冶炼完成啦！成功冶炼了 ${itemCount} 个 ${itemToSmelt}`, this.bot);
+            return true;
+
+        } catch (err) {
+            this.logger.report('冶炼失败了喵：' + err.message, this.bot);
+            return false;
+        }
+    }
+
 }
 
 module.exports = Action;

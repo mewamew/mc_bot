@@ -18,65 +18,16 @@ bot.loadPlugin(require('mineflayer-collectblock').plugin)
 
 
 bot.on('chat', async (username, message) => {
-  if (message === 'ct') {
-    const world = new World(bot);
-    const position = await world.getNearestCraftingTablePosition();
+  if (message === 'place') {
+    const world = new World(bot, logger);
+    const action = new Action(bot, logger);
+    const position = await world.findPlaceBlock();
     console.log(position);
-    return;
-  }
-
-
-  if (message === 'mc') {
-    const utils = new Action(bot, logger);
-    try { 
-      await utils.mineBlock("coal_ore", 4, 64);
-    } catch (err) {
-      console.log(err);
+    if (position) {
+      await action.moveTo(position);
     }
     return;
   }
-
-  if (message === 'mi') {
-    const utils = new Action(bot, logger);
-    try { 
-      await utils.mineBlock("iron_ore", 4, 64);
-    } catch (err) {
-      console.log(err);
-    }
-    return;
-  }
-
-  if (message === 'lp') {
-    const utils = new Action(bot, logger);
-    try { 
-      await utils.lookAtNearestPlayer();
-    } catch (err) {
-      console.log(err);
-    }
-    return;
-  }
-
-  if (message === 'l') {
-    const utils = new Action(bot, logger);
-    try { 
-      await utils.mineBlock("oak_log", 4, 64);
-      await utils.lookAtNearestPlayer();
-    } catch (err) {
-      console.log(err);
-    }
-    return;
-  }
-
-  if (message === 'g') {
-    const utils = new Action(bot, logger);
-    try { 
-      await utils.returnToGround();
-    } catch (err) {
-      console.log(err);
-    }
-    return;
-  }
-
 })
 
 bot.on('kicked', console.log)

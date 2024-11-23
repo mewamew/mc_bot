@@ -2,8 +2,9 @@ const logger = require('../utils/logger');
 const Vec3 = require('vec3');
 
 class World {
-    constructor(bot) {
+    constructor(bot, logger) {
         this.bot = bot;  // 在构造函数中初始化 bot
+        this.logger = logger;
     }
 
     async getNearestBlock(blockName, maxDistance = 64) {
@@ -41,6 +42,85 @@ class World {
         return this.getNearestBlock('furnace', maxDistance);
     }
 
+    async findPlaceBlock() {
+        // 获取机器人当前位置
+        const botPos = this.bot.entity.position;
+        
+        // 定义允许放置的基础方块列表
+        const validBaseBlocks = [
+            'grass_block',
+            'dirt',
+            'stone',
+            'cobblestone',
+            'andesite',
+            'diorite',
+            'granite',
+            'deepslate',
+            'tuff',
+            'sandstone',
+            'sand'
+        ];
+
+        // 搜索附近的实心方块
+        const blocks = this.bot.findBlocks({
+            matching: (block) => {
+                // 检查是否是有效的基础方块
+                return validBaseBlocks.includes(block.name)
+            },
+            maxDistance: 16,
+            count: 32768
+        });
+        
+        console.log("附近有" + blocks.length + "个可用的基础方块喵！");
+        for (const blockPos of blocks) {
+            const block = this.bot.blockAt(blockPos);
+            
+            // 检查3x3的基础方块区域
+            let isValid = true;
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dz = -1; dz <= 1; dz++) {
+                    const checkPos = blockPos.offset(dx, 0, dz);
+                    const checkBlock = this.bot.blockAt(checkPos);
+                    
+                    // 如果任何一个位置不是实心方块，则这个位置不合适
+                    if (!checkBlock || !validBaseBlocks.includes(checkBlock.name)) {
+                        isValid = false;
+                        break;
+                    }
+                }
+                if (!isValid) break;
+            }
+            
+            // 如果基础方块检查通过，检查3x3区域上方3格是否都为空气
+            if (isValid) {
+                for (let dy = 1; dy <= 3; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        for (let dz = -1; dz <= 1; dz++) {
+                            const checkPos = blockPos.offset(dx, dy, dz);
+                            const checkBlock = this.bot.blockAt(checkPos);
+                            
+                            if (!checkBlock || checkBlock.name !== 'air') {
+                                isValid = false;
+                                break;
+                            }
+                        }
+                        if (!isValid) break;
+                    }
+                    if (!isValid) break;
+                }
+                
+                // 如果所有检查都通过，返回这个位置
+                if (isValid) {
+                    this.logger.report('找到了合适的放置位置喵！', this.bot);
+                    return blockPos;
+                }
+            }
+        }
+
+        this.logger.report('找不到合适的放置位置喵！', this.bot);
+        return null;
+    }
+    
     getEnvironment() {
         // 初始化环境数据结构
         let environment = {
@@ -171,9 +251,6 @@ class World {
                 .map(([entityType, count]) => `${entityType}: ${count}`)
                 .join('\n');
         }
-
-        logger.info("Environment information:");
-        console.log(result);
         return result;
     }
 }

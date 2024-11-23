@@ -9,8 +9,8 @@ const World = require('./skills/world');
 class McBot {
     constructor(bot) {
         this.bot = bot;
-        this.world = new World(bot);
-        this.skillManager = new SkillManager();
+        this.world = new World(bot, logger);
+        //this.skillManager = new SkillManager();
         this.planner = new Planner();
         this.coder = new Coder(bot);
         this.executor = new Executor(bot, this.world);
@@ -23,7 +23,7 @@ class McBot {
     }
 
     async init() {
-        await this.skillManager.init();
+        //await this.skillManager.init();
         this.executor.init();
     }
 
@@ -160,7 +160,7 @@ class McBot {
         logger.pure('YELLOW', " ***** " + message + " *****");
         
         //最多尝试3次
-        const MAX_ATTEMPTS = 3;
+        const MAX_ATTEMPTS = 10;
         let attempts = 0;
         let reflection = null;
 
@@ -211,6 +211,9 @@ class McBot {
                 this.chat("所有任务完成");
                 break;
             }
+        }
+        if (attempts >= MAX_ATTEMPTS) {
+            this.chat("任务失败，已重试" + MAX_ATTEMPTS + "次");
         }
     }
 }
