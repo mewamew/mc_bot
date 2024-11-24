@@ -68,12 +68,41 @@ class Action {
             this.bot.chat('你在哪？');
             return;
         }
-        const pos = players[Object.keys(players)[0]].entity.position;
-        pos.y += 1;
-        await this.bot.lookAt(pos);
+        const entity = players[Object.keys(players)[0]].entity;
+        if (entity) {
+            const pos = entity.position;
+            pos.y += 1;
+            await this.bot.lookAt(pos);
+        }
     }
 
     async mineBlock(blockType, maxDistance = 4) {
+        // 添加方块到物品的映射关系
+        const blockToItemMap = {
+            'coal_ore': 'coal',
+            'deepslate_coal_ore': 'coal',
+            'iron_ore': 'raw_iron',
+            'deepslate_iron_ore': 'raw_iron',
+            'gold_ore': 'raw_gold',
+            'deepslate_gold_ore': 'raw_gold',
+            'copper_ore': 'raw_copper',
+            'deepslate_copper_ore': 'raw_copper',
+            'diamond_ore': 'diamond',
+            'deepslate_diamond_ore': 'diamond',
+            'emerald_ore': 'emerald',
+            'deepslate_emerald_ore': 'emerald',
+            'lapis_ore': 'lapis_lazuli',
+            'deepslate_lapis_ore': 'lapis_lazuli',
+            'redstone_ore': 'redstone',
+            'deepslate_redstone_ore': 'redstone',
+            'nether_gold_ore': 'gold_nugget',
+            'nether_quartz_ore': 'quartz',
+            'stone': 'cobblestone'
+        };
+
+        // 获取对应的物品名称
+        const itemType = blockToItemMap[blockType] || blockType;
+
         // 先判断需要使用的工具类型
         const woodTypes = ['oak_log', 'birch_log', 'spruce_log', 'jungle_log', 'acacia_log', 'dark_oak_log'];
         const needAxe = woodTypes.includes(blockType);
@@ -107,11 +136,32 @@ class Action {
         if (!block) return false;
 
         try {
-            const goal = new GoalBlock(blockPos.x, blockPos.y, blockPos.z);
-            await this.bot.pathfinder.goto(goal);
-            await this.bot.collectBlock.collect(block);
-            this.logger.report(`成功挖到一个 ${blockType} 喵！`, this.bot);
-            return true;
+            // 移动到方块附近
+            const success = await this.moveTo(blockPos);
+            if (!success) {
+                return false;
+            }
+
+            // 记录挖掘前的物品数量
+            const beforeCount = this.getItemCount(itemType);
+            
+            // 使用 dig 方法挖掘
+            await this.bot.dig(block);
+            
+            // 等待一小段时间让物品进入背包
+            await this.bot.waitForTicks(100);
+            
+            // 检查物品数量是否增加
+            const afterCount = this.getItemCount(itemType);
+            const isSuccess = afterCount > beforeCount;
+            
+            if (isSuccess) {
+                this.logger.report(`成功挖到一个 ${blockType}，获得了 ${itemType} 喵！`, this.bot);
+            } else {
+                this.logger.report(`虽然挖掉了 ${blockType}，但是没有收集到 ${itemType} 呢`, this.bot);
+            }
+            
+            return isSuccess;
         } catch (err) {
             this.logger.report('挖掘失败了喵：' + err.message, this.bot);
             return false;
@@ -119,7 +169,33 @@ class Action {
     }
 
     getItemCount(itemName) {
-        const items = this.bot.inventory.items().filter(item => item.name === itemName);
+        // 添加方块到物品的映射关系
+        const blockToItemMap = {
+            'coal_ore': 'coal',
+            'deepslate_coal_ore': 'coal',
+            'iron_ore': 'raw_iron',
+            'deepslate_iron_ore': 'raw_iron',
+            'gold_ore': 'raw_gold',
+            'deepslate_gold_ore': 'raw_gold',
+            'copper_ore': 'raw_copper',
+            'deepslate_copper_ore': 'raw_copper',
+            'diamond_ore': 'diamond',
+            'deepslate_diamond_ore': 'diamond',
+            'emerald_ore': 'emerald',
+            'deepslate_emerald_ore': 'emerald',
+            'lapis_ore': 'lapis_lazuli',
+            'deepslate_lapis_ore': 'lapis_lazuli',
+            'redstone_ore': 'redstone',
+            'deepslate_redstone_ore': 'redstone',
+            'nether_gold_ore': 'gold_nugget',
+            'nether_quartz_ore': 'quartz',
+            'stone': 'cobblestone'
+        };
+
+        // 获取对应的物品名称
+        const actualItemName = blockToItemMap[itemName] || itemName;
+        
+        const items = this.bot.inventory.items().filter(item => item.name === actualItemName);
         if (!items.length) return 0;
         return items.reduce((count, item) => count + item.count, 0);
     }
@@ -197,13 +273,13 @@ class Action {
         }
     }
 
-    async moveTo(targetBlock, timeout = 60000) {  // 默认30秒超时
+    async moveTo(targetPos, timeout = 60000) {  // 默认60秒超时
         try {
             // 创建移动任务的Promise
             const defaultMove = new Movements(this.bot);
             defaultMove.allow1by1towers = false;
             this.bot.pathfinder.setMovements(defaultMove);
-            const movePromise = this.bot.pathfinder.goto(new GoalNear(targetBlock.x, targetBlock.y, targetBlock.z, 1));
+            const movePromise = this.bot.pathfinder.goto(new GoalNear(targetPos.x, targetPos.y, targetPos.z, 1));
             
             // 创建超时Promise
             const timeoutPromise = new Promise((_, reject) => {
@@ -215,7 +291,7 @@ class Action {
 
             // 使用Promise.race竞争
             await Promise.race([movePromise, timeoutPromise]);
-            this.logger.report('到达目的地: ' + targetBlock.x + ' ' + targetBlock.y + ' ' + targetBlock.z, this.bot);
+            this.logger.report('到达目的地: ' + targetPos.x + ' ' + targetPos.y + ' ' + targetPos.z, this.bot);
             return true;
         } catch (err) {
             this.logger.report('移动失败了喵：' + err.message, this.bot);
@@ -238,16 +314,39 @@ class Action {
         }
 
         try {
-            await this.bot.equip(item, 'hand');
-            
-            // 创建一个新的 Vec3 实例来指定放置方向
+            // 计算放置位置
             const faceVector = new Vec3(0, 1, 0);
+            const placePos = referenceBlock.position.plus(faceVector);
+            
+            // 检查机器人是否站在即将放置方块的位置上
+            const botPos = this.bot.entity.position.floored();
+            if (botPos.equals(placePos)) {
+                this.logger.report('机器人站在即将放置方块的位置上喵！', this.bot);
+                // 向任意一个安全的方向移动一格
+                const safePositions = [
+                    new Vec3(2, 0, 0),
+                    new Vec3(-2, 0, 0),
+                    new Vec3(0, 0, 2),
+                    new Vec3(0, 0, -2)
+                ];
+
+                for (const offset of safePositions) {
+                    const newPos = botPos.plus(offset);
+                    const blockAtNewPos = this.bot.blockAt(newPos);
+                    if (blockAtNewPos && blockAtNewPos.name === 'air') {
+                        await this.moveTo(newPos);
+                        break;
+                    }
+                }
+            }
+
+            await this.bot.equip(item, 'hand');
             await this.bot.placeBlock(referenceBlock, faceVector);
             
             this.logger.report('已放置 ' + itemName, this.bot);
             return true;
         } catch (err) {
-            this.logger.report('放置失败: ' + err.message, this.bot);
+            this.logger.report('放置失败了喵: ' + err.message, this.bot);
             this.logger.error(err);
             return false;
         }
@@ -261,8 +360,11 @@ class Action {
         // 查找背包中最好的斧头
         let bestAxe = null;
         for (const axeType of axeTypes) {
-            bestAxe = this.bot.inventory.findInventoryItem(axeType);
-            if (bestAxe) break;
+            const axe = this.bot.inventory.findInventoryItem(axeType);
+            if (axe && axe.type && this.mcData.items[axe.type].name === axeType) {
+                bestAxe = axe;
+                break;
+            }
         }
 
         if (!bestAxe) {
@@ -270,8 +372,18 @@ class Action {
             return;
         }
 
-        await this.bot.equip(bestAxe, 'hand');
-        this.logger.report('装备了 ' + bestAxe.name + ' 喵！', this.bot);
+        try {
+            await this.bot.equip(bestAxe, 'hand');
+            // 验证是否成功装备
+            const heldItem = this.bot.inventory.slots[this.bot.getEquipmentDestSlot('hand')];
+            if (!heldItem || !axeTypes.includes(heldItem.name)) {
+                this.logger.report('装备斧头失败了喵！手里拿着的是：' + (heldItem ? heldItem.name : '空'), this.bot);
+                return;
+            }
+            this.logger.report('成功装备了 ' + bestAxe.name + ' 喵！', this.bot);
+        } catch (err) {
+            this.logger.report('装备斧头时出错了喵：' + err.message, this.bot);
+        }
     }
 
 
@@ -282,17 +394,30 @@ class Action {
         // 查找背包中最好的镐
         let bestPickaxe = null;
         for (const pickType of pickaxeTypes) {
-            bestPickaxe = this.bot.inventory.findInventoryItem(pickType);
-            if (bestPickaxe) break;
+            const pickaxe = this.bot.inventory.findInventoryItem(pickType);
+            if (pickaxe && pickaxe.type && this.mcData.items[pickaxe.type].name === pickType) {
+                bestPickaxe = pickaxe;
+                break;
+            }
         }
 
         if (!bestPickaxe) {
-            this.logger.report('找不到任何镐子', this.bot);
+            this.logger.report('找不到任何镐子喵~', this.bot);
             return;
         }
 
-        await this.bot.equip(bestPickaxe, 'hand');
-        this.logger.report('装备了 ' + bestPickaxe.name, this.bot);
+        try {
+            await this.bot.equip(bestPickaxe, 'hand');
+            // 验证是否成功装备
+            const heldItem = this.bot.inventory.slots[this.bot.getEquipmentDestSlot('hand')];
+            if (!heldItem || !pickaxeTypes.includes(heldItem.name)) {
+                this.logger.report('装备镐子失败了喵！手里拿着的是：' + (heldItem ? heldItem.name : '空'), this.bot);
+                return;
+            }
+            this.logger.report('成功装备了 ' + bestPickaxe.name + ' 喵！', this.bot);
+        } catch (err) {
+            this.logger.report('装备镐子时出错了喵：' + err.message, this.bot);
+        }
     }
 
     async returnToGround() {
