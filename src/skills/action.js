@@ -152,7 +152,7 @@ class Action {
                 await this.bot.dig(block);
                 
                 // 等待一小段时间让物品进入背包
-                await this.bot.waitForTicks(100);
+                await this.bot.waitForTicks(20);
                 
                 // 检查物品数量是否增加
                 const afterCount = this.getItemCount(itemType);
@@ -274,6 +274,13 @@ class Action {
             }
             
             this.logger.report('合成完成啦！一共合成了 ' + craftedCount + ' 个 ' + itemName, this.bot);
+            
+            // 新增：将制作的物品拿在手上并跳跃庆祝
+            const craftedItem = this.bot.inventory.findInventoryItem(itemName);
+            if (craftedItem) {
+                await this.bot.equip(craftedItem, 'hand');
+                await this.jump(2);  // 开心地跳两下
+            }
         } catch (err) {
             this.logger.report('合成失败了喵：' + err.message, this.bot);
             this.logger.error(err);
