@@ -123,7 +123,7 @@ class Action {
         const blocks = this.bot.findBlocks({
             matching: blockID,
             maxDistance: maxDistance,
-            count: 1
+            count: 64
         })
 
         if (!blocks || blocks.length === 0) {
@@ -131,41 +131,48 @@ class Action {
             return false;
         }
 
-        const blockPos = blocks[0];
-        const block = this.bot.blockAt(blockPos);
-        if (!block) return false;
+        // 尝试每个找到的方块
+        for (const blockPos of blocks) {
+            const block = this.bot.blockAt(blockPos);
+            if (!block) continue;
 
-        try {
-            // 移动到方块附近
-            const success = await this.moveTo(blockPos);
-            if (!success) {
-                return false;
-            }
+            try {
+                // 移动到方块附近
+                const success = await this.moveTo(blockPos);
+                if (!success) {
+                    this.logger.report(`移动到这个${blockType}失败了，试试下一个喵～`, this.bot);
+                    continue;  // 尝试下一个方块
+                }
 
-            // 记录挖掘前的物品数量
-            const beforeCount = this.getItemCount(itemType);
-            
-            // 使用 dig 方法挖掘
-            await this.bot.dig(block);
-            
-            // 等待一小段时间让物品进入背包
-            await this.bot.waitForTicks(100);
-            
-            // 检查物品数量是否增加
-            const afterCount = this.getItemCount(itemType);
-            const isSuccess = afterCount > beforeCount;
-            
-            if (isSuccess) {
-                this.logger.report(`成功挖到一个 ${blockType}，获得了 ${itemType} 喵！`, this.bot);
-            } else {
-                this.logger.report(`虽然挖掉了 ${blockType}，但是没有收集到 ${itemType} 呢`, this.bot);
+                // 记录挖掘前的物品数量
+                const beforeCount = this.getItemCount(itemType);
+                this.logger.report('到达目标方块附近，开始挖掘', this.bot);
+                await this.bot.waitForTicks(10);
+                // 使用 dig 方法挖掘
+                await this.bot.dig(block);
+                
+                // 等待一小段时间让物品进入背包
+                await this.bot.waitForTicks(100);
+                
+                // 检查物品数量是否增加
+                const afterCount = this.getItemCount(itemType);
+                const isSuccess = afterCount > beforeCount;
+                
+                if (isSuccess) {
+                    this.logger.report(`成功挖到一个 ${blockType}，获得了 ${itemType} 喵！`, this.bot);
+                } else {
+                    this.logger.report(`虽然挖掉了 ${blockType}，但是没有收集到 ${itemType} 呢`, this.bot);
+                }
+                
+                return isSuccess;
+            } catch (err) {
+                this.logger.report(`这个${blockType}挖掘失败了，试试下一个喵：${err.message}`, this.bot);
+                continue;  // 尝试下一个方块
             }
-            
-            return isSuccess;
-        } catch (err) {
-            this.logger.report('挖掘失败了喵：' + err.message, this.bot);
-            return false;
         }
+
+        this.logger.report(`附近的${blockType}都尝试过了，但是都失败了喵...`, this.bot);
+        return false;
     }
 
     getItemCount(itemName) {
