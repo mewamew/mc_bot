@@ -186,6 +186,7 @@ class McBot {
             for (const task of plan.sub_tasks) {
                 logger.pure("GREEN", "子任务: " + task);
             }
+            return;
 
             for (const task of plan.sub_tasks) {
                 this.chat("执行任务: " + task);
