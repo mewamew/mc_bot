@@ -47,7 +47,7 @@ API示例,注意除非示例代码出现返回值的判断，否则接口默认�
    - 禁止箭头函数和函数表达式
    - 禁止无限循环和递归，确保函数在有限的时间能内执行完毕
    - 禁止事件监听(bot.on/once)
-   - 严格参考示例代码的工具函数，能使用工具函数就使用工具函数，禁止调用不存在的接口
+   - 严格参考示例代码的工具函数，能使用工具函数就使用工具函数，尽量不直接调用minecraft api，禁止调用不存在的接口
    - 使用logger.report替代bot.chat。调用用法：logger.report('message', bot)
    - 禁止使用console.log, console.error, console.info
    - 禁止try/catch和require

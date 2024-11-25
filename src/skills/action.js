@@ -417,7 +417,7 @@ class Action {
 
         if (!bestPickaxe) {
             this.logger.report('找不到任何镐子喵~', this.bot);
-            return;
+            return false;
         }
 
         try {
@@ -426,11 +426,13 @@ class Action {
             const heldItem = this.bot.inventory.slots[this.bot.getEquipmentDestSlot('hand')];
             if (!heldItem || !pickaxeTypes.includes(heldItem.name)) {
                 this.logger.report('装备镐子失败了喵！手里拿着的是：' + (heldItem ? heldItem.name : '空'), this.bot);
-                return;
+                return false;
             }
             this.logger.report('成功装备了 ' + bestPickaxe.name + ' 喵！', this.bot);
+            return true;
         } catch (err) {
             this.logger.report('装备镐子时出错了喵：' + err.message, this.bot);
+            return false;
         }
     }
 
