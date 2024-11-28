@@ -9,6 +9,38 @@ class Action {
         this.mcData = require('minecraft-data')(bot.version);
 
     }
+
+    async equipAndHold(itemName) {
+        try {
+            // 查找物品
+            const item = this.bot.inventory.findInventoryItem(itemName);
+            if (!item) {
+                return false;
+            }
+
+            // 装备物品
+            await this.bot.equip(item, 'hand');
+            
+            // 验证是否成功装备
+            const heldItem = this.bot.inventory.slots[this.bot.getEquipmentDestSlot('hand')];
+            if (!heldItem || heldItem.name !== itemName) {
+                return false;
+            }
+
+            // 重复10次抬头和挥手动作
+            await this.bot.look(0, 0.8, true); // 抬头看向天空
+            for (let i = 0; i < 10; i++) {
+                await this.bot.swingArm('right');
+                await this.bot.waitForTicks(15);
+                await this.bot.swingArm('left');
+            }
+
+            return true;
+        } catch (err) {
+            return false;
+        }
+    }
+
     async wave(times = 3) {
         for (let i = 0; i < times; i++) {
             // 挥动主手
@@ -148,9 +180,16 @@ class Action {
                 const beforeCount = this.getItemCount(itemType);
                 this.logger.report('到达目标方块附近，开始挖掘', this.bot);
                 await this.bot.waitForTicks(10);
+
+                if (needAxe) {
+                    await this.equipAxe();
+                } else {
+                    await this.equipPickaxe();
+                }
+        
                 // 使用 dig 方法挖掘
                 await this.bot.dig(block);
-                
+
                 // 等待一小段时间让物品进入背包
                 await this.bot.waitForTicks(20);
                 
@@ -627,6 +666,8 @@ class Action {
             return false;
         }
     }
+
+    
 
 }
 

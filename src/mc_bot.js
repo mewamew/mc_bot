@@ -186,7 +186,6 @@ class McBot {
             for (const task of plan.sub_tasks) {
                 logger.pure("GREEN", "子任务: " + task);
             }
-            return;
 
             for (const task of plan.sub_tasks) {
                 this.chat("执行任务: " + task);
@@ -210,6 +209,9 @@ class McBot {
             }
             if (this.currentTaskIndex >= plan.sub_tasks.length) {
                 this.chat("所有任务完成");
+                const Action = require('./skills/action');
+                const action = new Action(this.bot, logger);
+                await action.equipAndHold("iron_pickaxe");
                 break;
             }
         }

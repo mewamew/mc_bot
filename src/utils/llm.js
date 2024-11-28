@@ -20,9 +20,9 @@ class LLM {
       try {
 
         
-        if (LLM_DEBUG != "false") {
-          logger.info("===== LLM输入 ==== ");
-          logger.pure('CYAN', messages[0].content);
+         if (LLM_DEBUG != "false") {
+           logger.info("===== LLM输入 ==== ");
+           logger.pure('CYAN', messages[0].content);
         }
         
         
@@ -50,15 +50,17 @@ class LLM {
         const isRetryable = error.response?.status >= 500 || error.code === 'ECONNABORTED';
         
         if (retries === maxRetries || !isRetryable) {
+          /*
           logger.error(`LLM API调用失败 (尝试 ${retries + 1}/${maxRetries + 1}):`, {
             error: error.message,
             status: error.response?.status,
             data: error.response?.data
           });
+          */
         }
 
         retries++;
-        logger.warn(`LLM API调用失败，${retryDelay/1000}秒后进行第${retries}次重试...`);
+        //logger.warn(`LLM API调用失败，${retryDelay/1000}秒后进行第${retries}次重试...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
     }

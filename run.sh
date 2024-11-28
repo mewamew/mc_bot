@@ -11,21 +11,21 @@ MODEL_CHOICE="glm-4"  # 可选: gpt4-mini, claude-3.5, glm-4
 case $MODEL_CHOICE in
     "gpt4-mini")
         echo "使用 GPT-4o-mini 模型运行~"
-        export LLM_API_KEY="sk-fwmdZgBWQuTTCA4JL3D8ocXk1hWQJlT6hFfy7ypM9OXinCpR"
-        export LLM_API_URL="https://api.302.ai/v1/chat/completions"
-        export EMBEDDING_API_URL="https://api.302.ai/v1/embeddings"
+        export LLM_API_KEY="填你的API KEY"
+        export LLM_API_URL="平台URL"
+        export EMBEDDING_API_URL="平台URL"
         export LLM_MODEL="gpt-4o-mini"
         ;;
     "claude-3.5")
         echo "使用 Claude-3.5 模型运行~"
-        export LLM_API_KEY="sk-KjYoBXsO45V70PgrzNNEf1sM34EaZeVPAi3LDdEOl8C5d1WW"
-        export LLM_API_URL="https://api.302.ai/v1/chat/completions"
-        export EMBEDDING_API_URL="https://api.302.ai/v1/embeddings"
+        export LLM_API_KEY="填你的API KEY"
+        export LLM_API_URL="平台URL"
+        export EMBEDDING_API_URL="平台URL"
         export LLM_MODEL="claude-3-5-sonnet-20241022"
         ;;
     "glm-4")
         echo "使用 GLM-4 模型运行~"
-        export LLM_API_KEY="70e8b914a92931f33a35040f2d51bd31.lXmsLAQYvfdcCRe1"
+        export LLM_API_KEY="填你的API KEY"
         export LLM_API_URL="https://open.bigmodel.cn/api/paas/v4/chat/completions"
         export LLM_MODEL="glm-4-plus"
         ;;

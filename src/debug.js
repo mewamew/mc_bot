@@ -18,46 +18,11 @@ bot.loadPlugin(require('mineflayer-collectblock').plugin)
 
 
 bot.on('chat', async (username, message) => {
-  if (message === 'place') {
-    const world = new World(bot, logger);
+  if(message=="hold") {
     const action = new Action(bot, logger);
-    const block = await world.findPlaceBlock();
-    console.log(block);
-    if (block) {
-      const result = await action.moveTo(block.position);
-      if (!result) {
-        logger.report('移动失败了喵！', bot);
-      } else {
-
-        await action.placeBlock('crafting_table', block);
-      }
-    }
-    return;
+    const result =  await action.equipAndHold("iron_pickaxe");
+    console.log(result);
   }
-  if (message === 'look') {
-    const world = new World(bot, logger);
-    const action = new Action(bot, logger);
-    await action.lookAtNearestPlayer();
-    return;
-  }
-
-  if (message === 'mine') {
-    const action = new Action(bot, logger);
-    await action.mineBlock('coal_ore', 1);
-    return;
-  }
-
-  if (message === 'pick') {
-    const action = new Action(bot, logger);
-    await action.equipPickaxe();
-    return;
-  }
-  if (message === 'axe') {
-    const action = new Action(bot, logger);
-    await action.equipAxe();
-    return;
-  }
-
 })
 
 bot.on('kicked', console.log)
